@@ -4,7 +4,7 @@ using Todo.Shared.Abstraction;
 
 namespace Todo.Shared.Infrastructure;
 
-internal class Repository<T> : IRepository<T> where T : class
+public abstract class Repository<T> : IRepository<T> where T : class
 {
     private readonly DbSet<T> _dbSet;
 
