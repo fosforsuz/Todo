@@ -31,13 +31,13 @@ public class User
 
     [Required]
     [EmailAddress]
-    [StringLength(100, MinimumLength = 20, ErrorMessage = "Email must be between 20 and 100 characters.")]
+    [StringLength(100, MinimumLength = 5, ErrorMessage = "Email must be between 5 and 100 characters.")]
     [Column("email")]
     public required string Email { get; set; }
 
     [Required]
     [EmailAddress]
-    [StringLength(100, MinimumLength = 20, ErrorMessage = "Email must be between 20 and 100 characters.")]
+    [StringLength(100, MinimumLength = 5, ErrorMessage = "Email must be between 20 and 100 characters.")]
     [Column("email_lower")]
     public required string EmailLower { get; set; }
 
