@@ -54,7 +54,7 @@ public abstract class Repository<T> : IRepository<T> where T : class
 
     public async Task<T?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync([id], cancellationToken);
+        return await _dbSet.FindAsync(id, cancellationToken);
     }
 
     public async Task<T?> FindAsync(object[] keyValues, CancellationToken cancellationToken = default)
