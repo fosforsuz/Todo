@@ -7,10 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Abstraction/" />
       <Folder Include="Command/" />
       <Folder Include="Query/" />
-      <Folder Include="Services/" />
     </ItemGroup>
 
 </Project>
