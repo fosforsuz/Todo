@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.Shared", "Todo.Shared\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UserService", "UserService", "{1CC2D723-C32C-4EA6-8A19-1332199488F1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WorkItem", "WorkItem", "{E985194D-88BF-4AA8-A933-982431E9FFE3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.User.Domain", "Todo.User.Domain\Todo.User.Domain.csproj", "{46B08B3B-259C-480C-9AFB-E27742ACF1D0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.User.Infrastructure", "Todo.User.Infrastructure\Todo.User.Infrastructure.csproj", "{8C4A25EA-0542-488F-AC0B-210E1961D174}"
@@ -20,6 +18,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.Api", "Todo.Api\Todo.Api.csproj", "{22D37C22-9081-452E-B1A5-9D93250801CF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Worker", "Worker", "{3F6AB6C6-4D21-49D7-BCD4-7DC0276BEC36}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.LogService", "Todo.LogService\Todo.LogService.csproj", "{9F927860-9F38-4873-AD97-041E1EB289E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{22D37C22-9081-452E-B1A5-9D93250801CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22D37C22-9081-452E-B1A5-9D93250801CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22D37C22-9081-452E-B1A5-9D93250801CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F927860-9F38-4873-AD97-041E1EB289E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F927860-9F38-4873-AD97-041E1EB289E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F927860-9F38-4873-AD97-041E1EB289E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F927860-9F38-4873-AD97-041E1EB289E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,5 +66,6 @@ Global
 		{8C4A25EA-0542-488F-AC0B-210E1961D174} = {1CC2D723-C32C-4EA6-8A19-1332199488F1}
 		{8D2A8D3C-2F49-406F-902C-1E4270AF4091} = {1CC2D723-C32C-4EA6-8A19-1332199488F1}
 		{8E0DA7F7-8BF4-4EFC-8CCA-CCC1A4B0EB9B} = {1CC2D723-C32C-4EA6-8A19-1332199488F1}
+		{9F927860-9F38-4873-AD97-041E1EB289E8} = {3F6AB6C6-4D21-49D7-BCD4-7DC0276BEC36}
 	EndGlobalSection
 EndGlobal

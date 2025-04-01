@@ -76,20 +76,6 @@ public class UnitOfWork : IUnitOfWork
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (_disposed)
-            return;
-
-        if (disposing)
-        {
-            _transaction?.Dispose();
-            _context.Dispose();
-        }
-
-        _disposed = true;
-    }
-
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)
@@ -105,5 +91,19 @@ public class UnitOfWork : IUnitOfWork
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _transaction?.Dispose();
+            _context.Dispose();
+        }
+
+        _disposed = true;
     }
 }

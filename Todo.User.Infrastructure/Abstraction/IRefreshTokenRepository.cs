@@ -3,4 +3,4 @@ using Todo.User.Domain.Entity;
 
 namespace Todo.User.Infrastructure.Abstraction;
 
-public interface ILoginHistoryRepository : IRepository<LoginHistory>;
+public interface IRefreshTokenRepository : IRepository<RefreshToken>;
