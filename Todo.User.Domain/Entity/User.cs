@@ -113,4 +113,6 @@ public class User
     [Column("otp_code_expires_at")] public DateTime? OtpCodeExpiresAt { get; set; }
 
     #endregion
+
+    public List<LoginHistory> LoginHistories { get; set; } = new();
 }
