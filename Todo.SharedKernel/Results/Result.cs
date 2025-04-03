@@ -11,10 +11,17 @@ public class Result
         Errors = errors ?? [];
     }
 
+    public Result()
+    {
+        ErrorCodes = new List<string>();
+        Errors = new List<string>();
+    }
+
     public bool IsSuccess { get; protected set; }
     public string? Message { get; protected set; }
     private List<string> ErrorCodes { get; }
     private List<string> Errors { get; }
+    public bool HasError => ErrorCodes.Count > 0 || Errors.Count > 0;
 
     public void AddErrorCode(string errorCode)
     {
@@ -29,6 +36,12 @@ public class Result
     public void AddError(string error)
     {
         Errors.Add(error);
+    }
+
+    public void AddError(string error, string errorCode)
+    {
+        Errors.Add(error);
+        ErrorCodes.Add(errorCode);
     }
 
     public void AddErrors(List<string> errors)
@@ -60,6 +73,11 @@ public class Result
     public List<string> GetErrors()
     {
         return Errors;
+    }
+
+    public List<string> GetErrorCodes()
+    {
+        return ErrorCodes;
     }
 }
 

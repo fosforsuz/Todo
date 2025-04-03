@@ -2,10 +2,11 @@ namespace Todo.SharedKernel.Enums;
 
 public enum ErrorLevel
 {
-    Info,
-    Low,
-    Medium,
-    High,
+    Trace,
+    Debug,
+    Information,
+    Warning,
+    Error,
     Critical,
     Fatal
 }

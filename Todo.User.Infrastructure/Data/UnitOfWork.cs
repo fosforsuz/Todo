@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork
     private readonly IServiceProvider _serviceProvider;
     private bool _disposed;
     private IDbContextTransaction? _transaction;
+    public bool IsTransactionStarted => _transaction is not null;
 
     public UnitOfWork(UserDbContext userDbContext, IServiceProvider serviceProvider)
     {
@@ -53,7 +54,7 @@ public class UnitOfWork : IUnitOfWork
     public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction is null)
-            throw new TransactionNotStartedException();
+            return;
 
         await _transaction.RollbackAsync(cancellationToken);
         await _transaction.DisposeAsync();
