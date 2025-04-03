@@ -2,6 +2,7 @@ namespace Todo.SharedKernel.Abstraction;
 
 public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
+    public bool IsTransactionStarted { get; }
     IRepository<T> GetRepository<T>() where T : class;
     TRepository GetCustomRepository<TRepository>() where TRepository : class;
 

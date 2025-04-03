@@ -54,24 +54,24 @@ public class User
     [Column("hashed_password")]
     public required string HashedPassword { get; set; }
 
-    [Required] [Column("role")] public Role Role { get; set; } = Role.Standard;
+    [Required][Column("role")] public Role Role { get; set; } = Role.Standard;
 
-    [Required] [Column("utc_offset")] public int UtcOffset { get; set; }
+    [Required][Column("utc_offset")] public int UtcOffset { get; set; }
 
-    [Required] [Column("is_verified")] public bool IsVerified { get; set; }
+    [Required][Column("is_verified")] public bool IsVerified { get; set; }
 
     [Required]
     [Column("notification_enabled")]
     public bool NotificationEnabled { get; set; } = true;
 
-    [Required] [Column("is_active")] public bool IsActive { get; set; } = true;
+    [Required][Column("is_active")] public bool IsActive { get; set; } = true;
 
     #endregion
 
     #region Time Information
 
-    [Required] [Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [Required] [Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     #endregion
 
@@ -110,4 +110,35 @@ public class User
     [Column("otp_code_expires_at")] public DateTime? OtpCodeExpiresAt { get; set; }
 
     #endregion
+
+
+    public static User Create(string name, string username, string email, string? phone, string hashedPassword,
+    Role role, int utcOffset)
+    {
+        return new User
+        {
+            Name = name,
+            Username = username,
+            UsernameLower = username.ToLower(),
+            Email = email,
+            EmailLower = email.ToLower(),
+            Phone = phone,
+            HashedPassword = hashedPassword,
+            Role = role,
+            UtcOffset = utcOffset,
+            IsVerified = false,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            NotificationEnabled = false,
+            Is2FaEnabled = false,
+            OtpCode = null,
+            OtpCodeExpiresAt = null,
+            PasswordResetToken = null,
+            PasswordResetTokenExpiresAt = null,
+            EmailVerificationToken = null,
+            EmailVerificationTokenExpiresAt = null,
+        };
+    }
+
 }

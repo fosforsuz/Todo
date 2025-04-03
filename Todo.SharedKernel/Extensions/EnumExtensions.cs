@@ -15,6 +15,17 @@ public static class EnumExtensions
         };
     }
 
+    public static Role GetRoleNameFromString(this string role)
+    {
+        return role switch
+        {
+            "Admin" => Role.Admin,
+            "Standard" => Role.Standard,
+            "Premium" => Role.Premium,
+            _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
+        };
+    }
+
     public static string GetErrorLevel(this ErrorLevel level)
     {
         return level switch
