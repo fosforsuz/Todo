@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Todo.Shared.Abstraction;
+using Todo.SharedKernel.Abstraction;
 using Todo.User.Infrastructure.Abstraction;
 using Todo.User.Infrastructure.Data;
 using Todo.User.Infrastructure.Persistence;

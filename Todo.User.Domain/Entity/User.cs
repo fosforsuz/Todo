@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Todo.Shared.Enums;
+using Todo.SharedKernel.Enums;
 
 namespace Todo.User.Domain.Entity;
 

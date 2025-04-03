@@ -1,4 +1,4 @@
-using Todo.Shared.Abstraction;
+using Todo.SharedKernel.Abstraction;
 using Todo.User.Application.Abstraction;
 using Todo.User.Infrastructure.Abstraction;
 

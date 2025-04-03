@@ -1,8 +1,9 @@
-using Todo.Shared.Abstraction;
-using Todo.Shared.Results;
+using Todo.SharedKernel.Abstraction;
+using Todo.SharedKernel.Extensions;
+using Todo.SharedKernel.Logger;
+using Todo.SharedKernel.Results;
 using Todo.User.Application.Abstraction;
 using Todo.User.Application.Command;
-using Todo.User.Domain.Extensions;
 using Todo.User.Infrastructure.Abstraction;
 using Todo.User.Infrastructure.Models;
 
@@ -10,6 +11,7 @@ namespace Todo.User.Application.Services;
 
 public class AuthService : IAuthService
 {
+    private readonly ILoggerService<AuthService> _logger;
     private readonly ILoginHistoryService _loginHistoryService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenService _tokenService;
@@ -20,12 +22,13 @@ public class AuthService : IAuthService
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
         ILoginHistoryService loginHistoryService,
-        IRefreshTokenService refreshTokenService)
+        IRefreshTokenService refreshTokenService, ILoggerService<AuthService> logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
         _loginHistoryService = loginHistoryService ?? throw new ArgumentNullException(nameof(loginHistoryService));
         _refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userRepository = unitOfWork.GetCustomRepository<IUserRepository>()
                           ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
@@ -43,10 +46,10 @@ public class AuthService : IAuthService
         try
         {
             await _loginHistoryService.AddLoginHistory(
-                userId: user.Id,
-                ipAddress: command.IpAddress,
-                userAgent: command.UserAgent,
-                isSuccessful: isLoginSuccessful,
+                user.Id,
+                command.IpAddress,
+                command.UserAgent,
+                isLoginSuccessful,
                 cancellationToken
             );
 
@@ -57,15 +60,15 @@ public class AuthService : IAuthService
             }
 
             var refreshToken = await _refreshTokenService.CreateRefreshToken(
-                userId: user.Id,
-                ipAddress: command.IpAddress,
+                user.Id,
+                command.IpAddress,
                 cancellationToken
             );
 
             await SaveAndCommitAsync(cancellationToken);
 
             var tokenResponse = await _tokenService.GenerateTokenAsync(
-                userId: user.Id,
+                user.Id,
                 username: user.Username,
                 role: user.Role.GetRoleName(),
                 refreshToken: refreshToken.Token,
@@ -73,12 +76,14 @@ public class AuthService : IAuthService
                 refreshTokenExpires: refreshToken.ExpiresAt
             );
 
+            await _logger.LogInformationAsync($"User who has Id: {user.Id} logged in successfully", cancellationToken);
+
             return Result<TokenResponse>.Ok(tokenResponse);
         }
         catch (Exception ex)
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            // TODO: Add logger here
+            await _logger.LogCriticalAsync("Error occurred during login", ex, cancellationToken);
             return Result<TokenResponse>.Fail("Unexpected error occurred during login.");
         }
     }

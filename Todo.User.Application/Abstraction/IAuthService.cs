@@ -1,4 +1,4 @@
-using Todo.Shared.Results;
+using Todo.SharedKernel.Results;
 using Todo.User.Application.Command;
 using Todo.User.Infrastructure.Models;
 

@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Todo.Shared.Config;
+using Todo.Shared.Contracts.Config;
 using Todo.User.Infrastructure.Abstraction;
 using Todo.User.Infrastructure.Models;
 

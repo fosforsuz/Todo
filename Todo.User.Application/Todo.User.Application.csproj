@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Todo.SharedKernel\Todo.SharedKernel.csproj"/>
         <ProjectReference Include="..\Todo.User.Infrastructure\Todo.User.Infrastructure.csproj"/>
     </ItemGroup>
 

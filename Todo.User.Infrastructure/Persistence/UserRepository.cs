@@ -1,4 +1,4 @@
-using Todo.Shared.Infrastructure;
+using Todo.SharedKernel.Infrastructure;
 using Todo.User.Infrastructure.Abstraction;
 using Todo.User.Infrastructure.Data;
 

@@ -1,4 +1,4 @@
-namespace Todo.Shared.Logger;
+namespace Todo.SharedKernel.Logger;
 
 public interface ILoggerService<T> where T : class
 {

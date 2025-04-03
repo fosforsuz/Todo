@@ -1,4 +1,4 @@
-namespace Todo.Shared.Abstraction;
+namespace Todo.SharedKernel.Abstraction;
 
 public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {

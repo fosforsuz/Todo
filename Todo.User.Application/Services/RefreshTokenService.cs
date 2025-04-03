@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
-using Todo.Shared.Abstraction;
-using Todo.Shared.Config;
+using Todo.Shared.Contracts.Config;
+using Todo.SharedKernel.Abstraction;
 using Todo.User.Application.Abstraction;
 using Todo.User.Application.Utils;
 using Todo.User.Domain.Entity;

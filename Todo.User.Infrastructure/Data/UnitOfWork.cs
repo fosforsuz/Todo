@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Todo.Shared.Abstraction;
-using Todo.Shared.Exceptions;
+using Todo.SharedKernel.Abstraction;
+using Todo.SharedKernel.Exceptions;
 
 namespace Todo.User.Infrastructure.Data;
 

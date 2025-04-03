@@ -7,8 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Todo.SharedKernel\Todo.SharedKernel.csproj"/>
-        <ProjectReference Include="..\Todo.Shared.Contracts\Todo.Shared.Contracts.csproj"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3"/>
     </ItemGroup>
 
 </Project>

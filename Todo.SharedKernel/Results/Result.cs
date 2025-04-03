@@ -1,4 +1,4 @@
-namespace Todo.Shared.Results;
+namespace Todo.SharedKernel.Results;
 
 public class Result
 {

@@ -1,4 +1,4 @@
-namespace Todo.Shared.Config;
+namespace Todo.Shared.Contracts.Config;
 
 public class JwtTokenConfig
 {

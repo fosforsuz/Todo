@@ -1,4 +1,4 @@
-namespace Todo.Shared.Enums;
+namespace Todo.SharedKernel.Enums;
 
 public enum Role
 {
