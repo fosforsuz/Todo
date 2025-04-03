@@ -1,7 +1,6 @@
-using System;
 using System.Linq.Expressions;
 
-namespace Todo.Shared.Abstraction;
+namespace Todo.SharedKernel.Abstraction;
 
 /// <summary>
 ///     Generic repository interface for managing entities that implement the IBaseEntity interface.

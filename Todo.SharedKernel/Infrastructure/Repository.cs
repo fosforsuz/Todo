@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Todo.Shared.Abstraction;
+using Todo.SharedKernel.Abstraction;
 
-namespace Todo.Shared.Infrastructure;
+namespace Todo.SharedKernel.Infrastructure;
 
 public abstract class Repository<T> : IRepository<T> where T : class
 {
@@ -54,7 +54,7 @@ public abstract class Repository<T> : IRepository<T> where T : class
 
     public async Task<T?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync(id, cancellationToken);
+        return await _dbSet.FindAsync([id], cancellationToken);
     }
 
     public async Task<T?> FindAsync(object[] keyValues, CancellationToken cancellationToken = default)

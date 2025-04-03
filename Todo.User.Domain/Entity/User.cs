@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Todo.Shared.Enums;
+using Todo.SharedKernel.Enums;
 
 namespace Todo.User.Domain.Entity;
 
@@ -11,6 +11,9 @@ public class User
     [Column("id")]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; init; } = Guid.CreateVersion7();
+
+    public virtual List<LoginHistory> LoginHistories { get; set; } = new();
+    public virtual List<RefreshToken> RefreshTokens { get; set; } = new();
 
     #region User Information
 
@@ -51,32 +54,24 @@ public class User
     [Column("hashed_password")]
     public required string HashedPassword { get; set; }
 
-    [Required][Column("role")] public Role Role { get; set; } = Role.Standard;
+    [Required] [Column("role")] public Role Role { get; set; } = Role.Standard;
 
-    [Required][Column("utc_offset")] public int UtcOffset { get; set; }
+    [Required] [Column("utc_offset")] public int UtcOffset { get; set; }
 
-    [Required][Column("is_verified")] public bool IsVerified { get; set; }
+    [Required] [Column("is_verified")] public bool IsVerified { get; set; }
 
-    [Required][Column("notification_enabled")] public bool NotificationEnabled { get; set; } = true;
+    [Required]
+    [Column("notification_enabled")]
+    public bool NotificationEnabled { get; set; } = true;
 
-    [Required][Column("is_active")] public bool IsActive { get; set; } = true;
+    [Required] [Column("is_active")] public bool IsActive { get; set; } = true;
 
     #endregion
 
     #region Time Information
 
-    [Required][Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [Required][Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    #endregion
-
-    #region Jwt Informations
-
-    [Column("refresh_token")]
-    [StringLength(255, MinimumLength = 20, ErrorMessage = "Refresh token must be between 20 and 255 characters.")]
-    public string? RefreshToken { get; set; }
-
-    [Column("refresh_token_expires_at")] public DateTime? RefreshTokenExpiresAt { get; set; }
+    [Required] [Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Required] [Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     #endregion
 
@@ -106,6 +101,8 @@ public class User
 
     #region Two-Factor Authentication
 
+    [Column("is_2fa_enabled")] public bool Is2FaEnabled { get; set; } = false;
+
     [Column("otp_code")]
     [StringLength(6, MinimumLength = 6, ErrorMessage = "OTP code must be 6 characters.")]
     public string? OtpCode { get; set; }
@@ -113,6 +110,4 @@ public class User
     [Column("otp_code_expires_at")] public DateTime? OtpCodeExpiresAt { get; set; }
 
     #endregion
-
-    public List<LoginHistory> LoginHistories { get; set; } = new();
 }

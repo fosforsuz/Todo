@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Todo.Shared.Abstraction;
-using Todo.Shared.Exceptions;
+using Todo.SharedKernel.Abstraction;
+using Todo.SharedKernel.Exceptions;
 
 namespace Todo.User.Infrastructure.Data;
 
@@ -76,20 +76,6 @@ public class UnitOfWork : IUnitOfWork
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (_disposed)
-            return;
-
-        if (disposing)
-        {
-            _transaction?.Dispose();
-            _context.Dispose();
-        }
-
-        _disposed = true;
-    }
-
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)
@@ -105,5 +91,19 @@ public class UnitOfWork : IUnitOfWork
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _transaction?.Dispose();
+            _context.Dispose();
+        }
+
+        _disposed = true;
     }
 }

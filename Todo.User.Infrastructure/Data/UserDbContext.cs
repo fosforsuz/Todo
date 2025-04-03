@@ -12,6 +12,7 @@ public class UserDbContext : DbContext
 
     public virtual DbSet<Domain.Entity.User> Users { get; set; } = null!;
     public virtual DbSet<LoginHistory> LoginHistories { get; set; } = null!;
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,13 +45,24 @@ public class UserDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_user_login_history");
         });
+
+        modelBuilder.Entity<RefreshToken>(builder =>
+        {
+            builder.HasIndex(x => x.Token)
+                .IsUnique()
+                .HasDatabaseName("idx_token");
+
+            builder.HasOne(x => x.User)
+                .WithMany(x => x.RefreshTokens)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_user_refresh_token");
+        });
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
-        {
             optionsBuilder.UseNpgsql("Server=localhost;Database=TodoUser;User Id=sa;Password=yourStrong(!)Password;");
-        }
     }
 }

@@ -10,3 +10,9 @@
     build:
       context: .
       dockerfile: Todo.Api/Dockerfile
+
+  todo.logservice:
+    image: todo.logservice
+    build:
+      context: .
+      dockerfile: Todo.LogService/Dockerfile

@@ -1,4 +1,4 @@
-namespace Todo.Shared.Exceptions;
+namespace Todo.SharedKernel.Exceptions;
 
 public class TransactionAlreadyStartedException : Exception
 {
