@@ -88,7 +88,7 @@ public class UserService : IUserService
         return result;
     }
 
-    private CommandResponse CreateSuccessResponse(Domain.Entity.User user)
+    private static CommandResponse CreateSuccessResponse(Domain.Entity.User user)
     {
         return new CommandResponse(user.CreatedAt, string.Empty, user.Id);
     }
