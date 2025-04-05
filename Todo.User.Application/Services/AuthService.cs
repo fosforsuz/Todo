@@ -228,7 +228,7 @@ public class AuthService : BaseService<AuthService>, IAuthService
             onSuccess: async (_, _) =>
             {
                 await _logger.LogInformationAsync(
-                    $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
+                    $"Command {nameof(PasswordResetCommand)} executed successfully for UserId: {user.Id}",
                     cancellationToken);
             },
             onError: async (mailCommand, exception) =>
