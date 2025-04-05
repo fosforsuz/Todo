@@ -1,6 +1,5 @@
 using Todo.Shared.Contracts.Constant;
 using Todo.SharedKernel.Abstraction;
-using Todo.SharedKernel.Exceptions;
 using Todo.SharedKernel.Extensions;
 using Todo.SharedKernel.Logger;
 using Todo.SharedKernel.Response;
@@ -25,9 +24,11 @@ public class UserService : IUserService
                           throw new ArgumentNullException(nameof(unitOfWork));
     }
 
-    public async Task<Result<CommandResponse>> RegisterUserAsync(RegisterCommand registerCommand, CancellationToken cancellationToken)
+    public async Task<Result<CommandResponse>> RegisterUserAsync(RegisterCommand registerCommand,
+        CancellationToken cancellationToken)
     {
-        var validation = await ValidateUserUniquenessAsync(registerCommand.Email, registerCommand.Username, registerCommand.Phone, null, cancellationToken);
+        var validation = await ValidateUserUniquenessAsync(registerCommand.Email, registerCommand.Username,
+            registerCommand.Phone, null, cancellationToken);
 
         if (validation.HasError)
             return Result<CommandResponse>.Fail(
@@ -71,18 +72,22 @@ public class UserService : IUserService
         }
     }
 
-    private async Task<Result> ValidateUserUniquenessAsync(string email, string username, string? phone, Guid? userId, CancellationToken cancellationToken)
+    private async Task<Result> ValidateUserUniquenessAsync(string email, string username, string? phone, Guid? userId,
+        CancellationToken cancellationToken)
     {
         var result = new Result();
 
-        if (await _userRepository.AnyAsync(x => x.EmailLower == email && (!userId.HasValue || x.Id != userId.Value), cancellationToken))
+        if (await _userRepository.AnyAsync(x => x.EmailLower == email && (!userId.HasValue || x.Id != userId.Value),
+                cancellationToken))
             result.AddError(ErrorMessages.Exist.EmailAlreadyExists, ErrorCodes.EmailAlreadyExists);
 
-        if (await _userRepository.AnyAsync(x => x.UsernameLower == username && (!userId.HasValue || x.Id != userId.Value), cancellationToken))
+        if (await _userRepository.AnyAsync(
+                x => x.UsernameLower == username && (!userId.HasValue || x.Id != userId.Value), cancellationToken))
             result.AddError(ErrorMessages.Exist.UsernameAlreadyExists, ErrorCodes.UsernameAlreadyExists);
 
         if (!string.IsNullOrWhiteSpace(phone) &&
-            await _userRepository.AnyAsync(x => x.Phone == phone && (!userId.HasValue || x.Id != userId.Value), cancellationToken))
+            await _userRepository.AnyAsync(x => x.Phone == phone && (!userId.HasValue || x.Id != userId.Value),
+                cancellationToken))
             result.AddError(ErrorMessages.Exist.PhoneAlreadyExists, ErrorCodes.PhoneAlreadyExists);
 
         return result;
@@ -92,5 +97,4 @@ public class UserService : IUserService
     {
         return new CommandResponse(user.CreatedAt, string.Empty, user.Id);
     }
-
 }

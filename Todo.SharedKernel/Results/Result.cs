@@ -83,7 +83,7 @@ public class Result
 
 public class Result<T> : Result
 {
-    public Result(T? value, bool isSuccess, string? message = null, List<string>? errorCodes = null,
+    private Result(T? value, bool isSuccess, string? message = null, List<string>? errorCodes = null,
         List<string>? errors = null)
         : base(isSuccess, message, errorCodes, errors)
     {
@@ -100,6 +100,12 @@ public class Result<T> : Result
     public static Result<T> Fail(string message)
     {
         return new Result<T>(isSuccess: false, value: default, message: message, errorCodes: null, errors: null);
+    }
+
+    public static Result<T> Fail(string message, string errorCode)
+    {
+        return new Result<T>(isSuccess: false, value: default, message: message,
+            errorCodes: [errorCode], errors: null);
     }
 
     public static Result<T> Fail(List<string> errors)
