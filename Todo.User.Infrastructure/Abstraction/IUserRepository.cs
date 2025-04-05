@@ -11,4 +11,5 @@ public interface IUserRepository : IRepository<Domain.Entity.User>
     Task<Domain.Entity.User?> GetUserByEmailVerificationTokenAsync(
         string emailVerificationToken,
         CancellationToken cancellationToken);
+    Task<Domain.Entity.User?> GetUserByPasswordResetTokenAsync(string passwordResetToken, CancellationToken cancellationToken);
 }

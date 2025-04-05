@@ -54,24 +54,24 @@ public class User
     [Column("hashed_password")]
     public required string HashedPassword { get; set; }
 
-    [Required] [Column("role")] public Role Role { get; set; } = Role.Standard;
+    [Required][Column("role")] public Role Role { get; set; } = Role.Standard;
 
-    [Required] [Column("utc_offset")] public int UtcOffset { get; set; }
+    [Required][Column("utc_offset")] public int UtcOffset { get; set; }
 
-    [Required] [Column("is_verified")] public bool IsEmailVerified { get; set; }
+    [Required][Column("is_verified")] public bool IsEmailVerified { get; set; }
 
     [Required]
     [Column("notification_enabled")]
     public bool NotificationEnabled { get; set; } = true;
 
-    [Required] [Column("is_active")] public bool IsActive { get; set; } = true;
+    [Required][Column("is_active")] public bool IsActive { get; set; } = true;
 
     #endregion
 
     #region Time Information
 
-    [Required] [Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [Required] [Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     #endregion
 
@@ -112,7 +112,7 @@ public class User
     #endregion
 
 
-    public static User Create(string name, string username, string email, string? phone, string hashedPassword,
+    public static User Create(string name, string username, string email, string? phone, string password,
         Role role, int utcOffset)
     {
         return new User
@@ -123,7 +123,7 @@ public class User
             Email = email,
             EmailLower = email.ToLower(),
             Phone = phone,
-            HashedPassword = hashedPassword,
+            HashedPassword = HashPassword(password),
             Role = role,
             UtcOffset = utcOffset,
             IsEmailVerified = false,
@@ -145,6 +145,7 @@ public class User
     {
         EmailVerificationToken = Guid.CreateVersion7().ToString();
         EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(1);
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void VerifyEmail()
@@ -152,11 +153,27 @@ public class User
         IsEmailVerified = true;
         EmailVerificationToken = null;
         EmailVerificationTokenExpiresAt = null;
-    }   
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     public void CreatePasswordResetToken()
     {
         PasswordResetToken = Guid.CreateVersion7().ToString();
         PasswordResetTokenExpiresAt = DateTime.UtcNow.AddHours(1);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ResetPassword(string password)
+    {
+        HashedPassword = HashPassword(password);
+        PasswordResetToken = null;
+        PasswordResetTokenExpiresAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static string HashPassword(string password)
+    {
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+        return hashedPassword;
     }
 }
