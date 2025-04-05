@@ -10,6 +10,7 @@ public static class ErrorCodes
     
     public const string EmailVerificationTokenExpired = "email_verification_token_expired";
     public const string PhoneVerificationTokenExpired = "phone_verification_token_expired";
+    public const string PasswordResetTokenExpired = "password_reset_token_expired";
     
     public const string EmailAlreadyVerified = "email_already_verified";
 }

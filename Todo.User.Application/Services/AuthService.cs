@@ -201,6 +201,49 @@ public class AuthService : BaseService<AuthService>, IAuthService
         return result;
     }
 
+    public async Task<Result<CommandResponse>> PasswordResetAsync(PasswordResetCommand command, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByPasswordResetTokenAsync(command.Token, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        if (user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+            return Result<CommandResponse>.Fail(ErrorMessages.Expired.PasswordResetToken,
+                ErrorCodes.PasswordResetTokenExpired);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.ResetPassword(command.NewPassword);
+
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
+                    cancellationToken);
+            },
+            onError: async (mailCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error occurred during email verification: {mailCommand.Token}",
+                    exception,
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
+    }
+
     public async Task<Result<CommandResponse>> SendPasswordResetMailAsync(SendPasswordResetMailCommand command,
         CancellationToken cancellationToken)
     {

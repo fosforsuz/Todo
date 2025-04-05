@@ -71,6 +71,24 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
         );
     }
 
+    public async Task<Domain.Entity.User?> GetUserByPasswordResetTokenAsync(string passwordResetToken, CancellationToken cancellationToken)
+    {
+        return await GetSingleAsync(
+            predicate: user => user.PasswordResetToken == passwordResetToken && user.IsActive,
+            selector: user => new Domain.Entity.User
+            {
+                Name = user.Name,
+                Username = user.Username,
+                UsernameLower = user.UsernameLower,
+                Email = user.Email,
+                EmailLower = user.EmailLower,
+                HashedPassword = string.Empty,
+                PasswordResetToken = user.PasswordResetToken,
+                PasswordResetTokenExpiresAt = user.PasswordResetTokenExpiresAt
+            },
+            cancellationToken: cancellationToken
+        );
+    }
 
     public async Task<Domain.Entity.User?> GetUserForLoginAsync(string email, CancellationToken cancellationToken)
     {
