@@ -25,7 +25,7 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 EmailLower = user.EmailLower,
                 HashedPassword = user.HashedPassword,
                 Is2FaEnabled = user.Is2FaEnabled,
-                IsVerified = user.IsVerified
+                IsEmailVerified = user.IsEmailVerified
             },
             cancellationToken: cancellationToken
         );

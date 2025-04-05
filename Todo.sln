@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.Shared.Contracts", "Todo.Shared.Contracts\Todo.Shared.Contracts.csproj", "{EF42960C-2726-40B1-B438-4CDE3E7ABF7D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UserService", "UserService", "{1CC2D723-C32C-4EA6-8A19-1332199488F1}"
@@ -24,6 +25,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.LogService", "Todo.LogService\Todo.LogService.csproj", "{9F927860-9F38-4873-AD97-041E1EB289E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.SharedKernel", "Todo.SharedKernel\Todo.SharedKernel.csproj", "{305762E9-D814-4894-9E7D-F7ABF081DC1B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.MailService", "Worker\Todo.MailService\Todo.MailService.csproj", "{F3A713F3-A957-43AC-AF7C-CD021C5E29B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +66,10 @@ Global
 		{305762E9-D814-4894-9E7D-F7ABF081DC1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{305762E9-D814-4894-9E7D-F7ABF081DC1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{305762E9-D814-4894-9E7D-F7ABF081DC1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3A713F3-A957-43AC-AF7C-CD021C5E29B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3A713F3-A957-43AC-AF7C-CD021C5E29B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3A713F3-A957-43AC-AF7C-CD021C5E29B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3A713F3-A957-43AC-AF7C-CD021C5E29B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -73,5 +80,6 @@ Global
 		{8D2A8D3C-2F49-406F-902C-1E4270AF4091} = {1CC2D723-C32C-4EA6-8A19-1332199488F1}
 		{8E0DA7F7-8BF4-4EFC-8CCA-CCC1A4B0EB9B} = {1CC2D723-C32C-4EA6-8A19-1332199488F1}
 		{9F927860-9F38-4873-AD97-041E1EB289E8} = {3F6AB6C6-4D21-49D7-BCD4-7DC0276BEC36}
+		{F3A713F3-A957-43AC-AF7C-CD021C5E29B8} = {3F6AB6C6-4D21-49D7-BCD4-7DC0276BEC36}
 	EndGlobalSection
 EndGlobal

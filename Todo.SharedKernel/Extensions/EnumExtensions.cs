@@ -30,13 +30,26 @@ public static class EnumExtensions
     {
         return level switch
         {
-            ErrorLevel.Info => "Information",
-            ErrorLevel.Low => "Low",
-            ErrorLevel.Medium => "Medium",
-            ErrorLevel.High => "High",
+            ErrorLevel.Trace => "Trace",
+            ErrorLevel.Debug => "Debug",
+            ErrorLevel.Information => "Information",
+            ErrorLevel.Warning => "Warning",
+            ErrorLevel.Error => "Error",
             ErrorLevel.Critical => "Critical",
             ErrorLevel.Fatal => "Fatal",
             _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+        };
+    }
+
+    public static string GetEmailEventTypeSubject(this EmailEventType type)
+    {
+        return type switch
+        {
+            EmailEventType.Notification => "Notification",
+            EmailEventType.Welcome => "Welcome to our service",
+            EmailEventType.PasswordReset => "Password Reset",
+            EmailEventType.EmailConfirmation => "Email Confirmation",
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
 }
