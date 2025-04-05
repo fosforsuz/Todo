@@ -14,7 +14,7 @@ using Todo.User.Infrastructure.Models;
 
 namespace Todo.User.Application.Services;
 
-public class AuthService : IAuthService
+public class AuthService : BaseService<AuthService>, IAuthService
 {
     private readonly ILoggerService<AuthService> _logger;
     private readonly IUserRepository _userRepository;
@@ -30,7 +30,7 @@ public class AuthService : IAuthService
         ITokenService tokenService,
         ILoginHistoryService loginHistoryService,
         IRefreshTokenService refreshTokenService, ILoggerService<AuthService> logger, IEmailFactory emailFactory,
-        IRabbitMqEmailPublisher rabbitMqEmailPublisher)
+        IRabbitMqEmailPublisher rabbitMqEmailPublisher) : base(unitOfWork, logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
@@ -94,7 +94,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             await _unitOfWork.SafeRollbackAsync(cancellationToken);
-            await _logger.LogCriticalAsync("Error occurred during login", ex, cancellationToken);
+            await _logger.LogByExceptionSeverityAsync("Error occurred during login", ex, cancellationToken);
             return Result<TokenResponse>.Fail("Unexpected error occurred during login.");
         }
     }
@@ -102,47 +102,62 @@ public class AuthService : IAuthService
     public async Task<Result<CommandResponse>> SendVerifyMailAsync(SendVerifyMailCommand command,
         CancellationToken cancellationToken)
     {
-        var user = await GetUserByIdAsync(command.UserId, cancellationToken);
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
         if (user is null)
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
-        user.CreateVerificationToken();
 
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-            await _userRepository.UpdateAsync(user, cancellationToken);
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.CreateVerificationToken();
+                await _userRepository.UpdateAsync(user, cancellationToken);
 
-            var email = await _emailFactory.CreateAsync(
-                type: EmailEventType.EmailConfirmation,
-                to: user.Email,
-                metadata: new Dictionary<string, string?>()
-                {
-                    { "name", user.Name },
-                    { "verificationToken", user.EmailVerificationToken },
-                    { "verificationTokenExpiresAt", user.EmailVerificationTokenExpiresAt.ToString() }
-                }
-            );
+                var email = await _emailFactory.CreateAsync(
+                    type: EmailEventType.EmailConfirmation,
+                    to: user.Email,
+                    metadata: new Dictionary<string, string?>
+                    {
+                        { "name", user.Name },
+                        { "verificationToken", user.EmailVerificationToken },
+                        { "verificationTokenExpiresAt", user.EmailVerificationTokenExpiresAt.ToString() }
+                    }
+                );
 
-            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue, cancellationToken);
+                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
+                    cancellationToken);
 
-            await SaveAndCommitAsync(cancellationToken);
-            await _logger.LogInformationAsync($"Verification email sent to user with Id: {user.Id}", cancellationToken);
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
+                    cancellationToken);
+            },
+            onError: async (mailCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error occurred during email verification: {mailCommand.UserId}",
+                    exception,
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
 
-            return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
-        }
-        catch (Exception e)
-        {
-            await _unitOfWork.SafeRollbackAsync(cancellationToken);
-            await _logger.LogCriticalAsync("Error occurred during email verification", e, cancellationToken);
-            return Result<CommandResponse>.Fail("Unexpected error occurred during email verification.");
-        }
+        return result;
     }
 
     public async Task<Result<CommandResponse>> VerifyEmailAsync(VerifyMailCommand command,
         CancellationToken cancellationToken)
     {
-        var user = await GetUserByEmailVerificationTokenAsync(command.VerifyToken, cancellationToken);
+        var user = await _userRepository.GetUserByEmailVerificationTokenAsync(command.VerifyToken, cancellationToken);
         if (user is null)
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
@@ -154,74 +169,89 @@ public class AuthService : IAuthService
             return Result<CommandResponse>.Fail(ErrorMessages.Expired.EmailVerificationToken,
                 ErrorCodes.EmailVerificationTokenExpired);
 
-        user.VerifyEmail();
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-            await _userRepository.UpdateAsync(user, cancellationToken);
+        var result = await ExecuteCommandAsync(
+            command,
+            action: async () =>
+            {
+                user.VerifyEmail();
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
+                    cancellationToken);
+            },
+            onError: async (mailCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error occurred during email verification: {mailCommand.VerifyToken}",
+                    exception,
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
 
-            await SaveAndCommitAsync(cancellationToken);
-            await _logger.LogInformationAsync($"Email verified for user with Id: {user.Id}", cancellationToken);
-
-            return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
-        }
-        catch (Exception e)
-        {
-            await _unitOfWork.SafeRollbackAsync(cancellationToken);
-            await _logger.LogCriticalAsync("Error occurred during email verification", e, cancellationToken);
-            return Result<CommandResponse>.Fail("Unexpected error occurred during email verification.");
-        }
+        return result;
     }
 
-    private async Task<Domain.Entity.User?> GetUserByEmailVerificationTokenAsync(
-        string emailVerificationToken,
+    public async Task<Result<CommandResponse>> SendPasswordResetMailAsync(SendPasswordResetMailCommand command,
         CancellationToken cancellationToken)
     {
-        return await _userRepository.GetSingleAsync(
-            predicate: user => user.EmailVerificationToken == emailVerificationToken && user.IsActive,
-            selector: user => new Domain.Entity.User
+        var user = await _userRepository.GetUserByEmailAsync(command.Email, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
             {
-                Name = user.Name,
-                Username = user.Username,
-                UsernameLower = user.UsernameLower,
-                Email = user.Email,
-                EmailLower = user.EmailLower,
-                HashedPassword = string.Empty,
-                IsEmailVerified = user.IsEmailVerified,
-                EmailVerificationToken = user.EmailVerificationToken,
-                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt,
+                user.CreatePasswordResetToken();
+                await _userRepository.UpdateAsync(user, cancellationToken);
+
+                var email = await _emailFactory.CreateAsync(
+                    type: EmailEventType.PasswordReset,
+                    to: user.Email,
+                    metadata: new Dictionary<string, string?>
+                    {
+                        { "name", user.Name },
+                        { "passwordResetToken", user.PasswordResetToken },
+                        { "passwordResetTokenExpiresAt", user.PasswordResetTokenExpiresAt.ToString() }
+                    }
+                );
+
+                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
+                    cancellationToken);
+
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
+                    cancellationToken);
+            },
+            onError: async (mailCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error occurred during password reset email: {mailCommand.Email}",
+                    exception,
+                    cancellationToken);
             },
             cancellationToken: cancellationToken
         );
-    }
 
-    private async Task<Domain.Entity.User?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        return await _userRepository.GetSingleAsync(
-            predicate: user => user.Id == userId && user.IsActive,
-            selector: user => new Domain.Entity.User
-            {
-                Name = user.Name,
-                Username = user.Username,
-                UsernameLower = user.UsernameLower,
-                Email = user.Email,
-                EmailLower = user.EmailLower,
-                HashedPassword = string.Empty,
-                EmailVerificationToken = user.EmailVerificationToken,
-                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt,
-            },
-            cancellationToken: cancellationToken
-        );
-    }
-
-    private async Task SaveAndCommitAsync(CancellationToken cancellationToken)
-    {
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await _unitOfWork.CommitTransactionAsync(cancellationToken);
-    }
-
-    private static CommandResponse CreateSuccessResponse(Domain.Entity.User user)
-    {
-        return new CommandResponse(user.CreatedAt, string.Empty, user.Id);
+        return result;
     }
 }

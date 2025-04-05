@@ -14,5 +14,8 @@ public interface IAuthService
 
     Task<Result<CommandResponse>> VerifyEmailAsync(VerifyMailCommand command,
         CancellationToken cancellationToken);
-    
+
+    Task<Result<CommandResponse>> SendPasswordResetMailAsync(SendPasswordResetMailCommand command,
+        CancellationToken cancellationToken);
+
 }

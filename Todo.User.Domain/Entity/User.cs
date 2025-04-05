@@ -152,5 +152,11 @@ public class User
         IsEmailVerified = true;
         EmailVerificationToken = null;
         EmailVerificationTokenExpiresAt = null;
+    }   
+
+    public void CreatePasswordResetToken()
+    {
+        PasswordResetToken = Guid.CreateVersion7().ToString();
+        PasswordResetTokenExpiresAt = DateTime.UtcNow.AddHours(1);
     }
 }
