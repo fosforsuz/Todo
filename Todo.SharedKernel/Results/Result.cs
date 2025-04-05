@@ -22,6 +22,7 @@ public class Result
     private List<string> ErrorCodes { get; }
     private List<string> Errors { get; }
     public bool HasError => ErrorCodes.Count > 0 || Errors.Count > 0;
+    public string GetMessage => Message ?? string.Empty;
 
     public void AddErrorCode(string errorCode)
     {

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Mail;
 using Todo.SharedKernel.Enums;
 using Todo.SharedKernel.Events;
 using Todo.SharedKernel.Extensions;
@@ -31,7 +32,30 @@ public class RabbitMqLoggerService<T> : ILoggerService<T> where T : class
     public Task LogCriticalAsync(string message, Exception exception, CancellationToken cancellationToken = default) =>
         SendLogAsync(ErrorLevel.Fatal, message, exception, cancellationToken);
 
-    private async Task SendLogAsync(ErrorLevel level, string message, Exception? exception, CancellationToken cancellationToken)
+    public async Task LogByExceptionSeverityAsync(
+        string contextMessage,
+        Exception exception,
+        CancellationToken cancellationToken = default)
+    {
+        var level = exception switch
+        {
+            SmtpException => ErrorLevel.Warning,
+            TimeoutException => ErrorLevel.Warning,
+            TaskCanceledException => ErrorLevel.Warning,
+
+            ArgumentNullException => ErrorLevel.Error,
+            ArgumentException => ErrorLevel.Error,
+            InvalidOperationException => ErrorLevel.Error,
+
+            _ => ErrorLevel.Fatal
+        };
+
+        await SendLogAsync(level, contextMessage, exception, cancellationToken);
+    }
+
+
+    private async Task SendLogAsync(ErrorLevel level, string message, Exception? exception,
+        CancellationToken cancellationToken)
     {
         var logEvent = new LogEvent
         {
@@ -62,6 +86,7 @@ public class RabbitMqLoggerService<T> : ILoggerService<T> where T : class
 
     private static string? GetTraceId() => Activity.Current?.TraceId.ToString();
     private static string? GetSpanId() => Activity.Current?.SpanId.ToString();
+
     private static string? GetCorrelationId() =>
         Activity.Current?.Baggage.FirstOrDefault(kvp => kvp.Key == "CorrelationId").Value;
 }
