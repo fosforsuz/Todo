@@ -8,4 +8,5 @@ public class TokenResponse
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpires { get; set; }
     public string? TokenType { get; set; }
+    public string? UserId { get; set; }
 }

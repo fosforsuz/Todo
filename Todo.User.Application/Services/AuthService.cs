@@ -52,6 +52,9 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
         var isLoginSuccessful = BCrypt.Net.BCrypt.Verify(command.Password, user.HashedPassword);
 
+        if (isLoginSuccessful && user.Is2FaEnabled)
+            return await SendOtpAsync(user, cancellationToken);
+
         try
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -96,6 +99,46 @@ public class AuthService : BaseService<AuthService>, IAuthService
             await _unitOfWork.SafeRollbackAsync(cancellationToken);
             await _logger.LogByExceptionSeverityAsync("Error occurred during login", ex, cancellationToken);
             return Result<TokenResponse>.Fail("Unexpected error occurred during login.");
+        }
+    }
+
+    private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
+    {
+
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            user.GenerateOtpCode();
+            await _userRepository.UpdateAsync(user, cancellationToken);
+
+            var email = await _emailFactory.CreateAsync(
+                type: EmailEventType.Otp,
+                to: user.Email,
+                metadata: new Dictionary<string, string?>
+                {
+                    { "name", user.Name },
+                    { "otpCode", user.OtpCode.ToString() },
+                    { "otpCodeExpiresAt", user.OtpCodeExpiresAt.ToString() }
+                }
+            );
+
+            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
+                cancellationToken);
+
+            await SaveAndCommitAsync(cancellationToken);
+
+            var tokenResponse = _tokenService.CreateTokenResponseFor2Fa(user.Id);
+
+            await _logger.LogInformationAsync($"OTP sent successfully for UserId: {user.Id}", cancellationToken);
+            return Result<TokenResponse>.Ok(tokenResponse);
+        }
+        catch (Exception ex)
+        {
+
+            await _unitOfWork.SafeRollbackAsync(cancellationToken);
+            await _logger.LogByExceptionSeverityAsync("Error occurred during OTP generation", ex, cancellationToken);
+            return Result<TokenResponse>.Fail("Unexpected error occurred during OTP generation.");
         }
     }
 
@@ -297,4 +340,5 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
         return result;
     }
+
 }

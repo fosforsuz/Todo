@@ -17,7 +17,7 @@ public class EmailFactory : IEmailFactory
 
     public async Task<EmailEvent> CreateAsync(EmailEventType type, string to, Dictionary<string, string?> metadata)
     {
-        var templatePath = Path.Combine(_env.WebRootPath, "templates", $"{type}.html");
+        var templatePath = Path.Combine(_env.WebRootPath, "templates", $"{type.ToString()}.html");
 
         if (!File.Exists(templatePath))
             throw new FileNotFoundException($"Email template not found: {templatePath}");
