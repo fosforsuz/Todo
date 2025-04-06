@@ -55,4 +55,18 @@ public class TokenService : ITokenService
             RefreshTokenExpires = refreshTokenExpires
         });
     }
+
+    public TokenResponse CreateTokenResponseFor2Fa(Guid userId)
+    {
+        return new TokenResponse()
+        {
+            IsTwoFactorEnabled = true,
+            UserId = userId.ToString(),
+            Token = string.Empty,
+            Expires = DateTime.UtcNow,
+            RefreshToken = null,
+            RefreshTokenExpires = null,
+            TokenType = null
+        };
+    }
 }

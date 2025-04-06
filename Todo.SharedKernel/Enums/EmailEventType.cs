@@ -5,5 +5,6 @@ public enum EmailEventType
     EmailConfirmation,
     PasswordReset,
     Welcome,
-    Notification
+    Notification,
+    Otp
 }

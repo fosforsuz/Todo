@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
 using Todo.SharedKernel.Enums;
 
 namespace Todo.User.Domain.Entity;
@@ -104,8 +105,10 @@ public class User
     [Column("is_2fa_enabled")] public bool Is2FaEnabled { get; set; } = false;
 
     [Column("otp_code")]
-    [StringLength(6, MinimumLength = 6, ErrorMessage = "OTP code must be 6 characters.")]
-    public string? OtpCode { get; set; }
+    public int OtpCode { get; set; }
+
+    [Column("otp_try_count")]
+    public int OtpTryCount { get; set; } = 0;
 
     [Column("otp_code_expires_at")] public DateTime? OtpCodeExpiresAt { get; set; }
 
@@ -132,7 +135,7 @@ public class User
             UpdatedAt = DateTime.UtcNow,
             NotificationEnabled = false,
             Is2FaEnabled = false,
-            OtpCode = null,
+            OtpCode = 0,
             OtpCodeExpiresAt = null,
             PasswordResetToken = null,
             PasswordResetTokenExpiresAt = null,
@@ -175,5 +178,25 @@ public class User
     {
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
         return hashedPassword;
+    }
+
+    public bool VerifyPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.Verify(password, HashedPassword);
+    }
+
+    public void Enable2Fa()
+    {
+        Is2FaEnabled = true;
+        OtpCode = 0;
+        OtpCodeExpiresAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void GenerateOtpCode()
+    {
+        OtpCode = RandomNumberGenerator.GetInt32(100_000, 999_999);
+        OtpCodeExpiresAt = DateTime.UtcNow.AddMinutes(5);
+        UpdatedAt = DateTime.UtcNow;
     }
 }
