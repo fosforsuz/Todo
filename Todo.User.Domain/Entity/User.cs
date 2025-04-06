@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security;
 using System.Security.Cryptography;
 using Todo.SharedKernel.Enums;
 
@@ -55,24 +56,24 @@ public class User
     [Column("hashed_password")]
     public required string HashedPassword { get; set; }
 
-    [Required][Column("role")] public Role Role { get; set; } = Role.Standard;
+    [Required] [Column("role")] public Role Role { get; set; } = Role.Standard;
 
-    [Required][Column("utc_offset")] public int UtcOffset { get; set; }
+    [Required] [Column("utc_offset")] public int UtcOffset { get; set; }
 
-    [Required][Column("is_verified")] public bool IsEmailVerified { get; set; }
+    [Required] [Column("is_verified")] public bool IsEmailVerified { get; set; }
 
     [Required]
     [Column("notification_enabled")]
     public bool NotificationEnabled { get; set; } = true;
 
-    [Required][Column("is_active")] public bool IsActive { get; set; } = true;
+    [Required] [Column("is_active")] public bool IsActive { get; set; } = true;
 
     #endregion
 
     #region Time Information
 
-    [Required][Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [Required][Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Required] [Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Required] [Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     #endregion
 
@@ -105,10 +106,11 @@ public class User
     [Column("is_2fa_enabled")] public bool Is2FaEnabled { get; set; } = false;
 
     [Column("otp_code")]
-    public int OtpCode { get; set; }
+    [StringLength(6, MinimumLength = 6,
+        ErrorMessage = "OTP code must be exactly 6 characters.")]
+    public string? OtpCode { get; set; }
 
-    [Column("otp_try_count")]
-    public int OtpTryCount { get; set; } = 0;
+    [Column("otp_try_count")] public int OtpTryCount { get; set; } = 0;
 
     [Column("otp_code_expires_at")] public DateTime? OtpCodeExpiresAt { get; set; }
 
@@ -135,7 +137,7 @@ public class User
             UpdatedAt = DateTime.UtcNow,
             NotificationEnabled = false,
             Is2FaEnabled = false,
-            OtpCode = 0,
+            OtpCode = null,
             OtpCodeExpiresAt = null,
             PasswordResetToken = null,
             PasswordResetTokenExpiresAt = null,
@@ -188,15 +190,43 @@ public class User
     public void Enable2Fa()
     {
         Is2FaEnabled = true;
-        OtpCode = 0;
+        OtpCode = null;
         OtpCodeExpiresAt = null;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void GenerateOtpCode()
     {
-        OtpCode = RandomNumberGenerator.GetInt32(100_000, 999_999);
+        OtpCode = RandomNumberGenerator.GetInt32(100_000, 999_999).ToString();
         OtpCodeExpiresAt = DateTime.UtcNow.AddMinutes(5);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncreaseOtpTryCount()
+    {
+        OtpTryCount++;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public bool VerifyOtp(string inputCode)
+    {
+        if (OtpTryCount >= 3)
+            throw new SecurityException("OTP attempt limit exceeded.");
+
+        OtpTryCount++;
+
+        if (OtpCode != inputCode || !(OtpCodeExpiresAt >= DateTime.UtcNow))
+            return false;
+
+        OtpTryCount = 0;
+        return true;
+    }
+
+    public void ResetOtpCode()
+    {
+        OtpCode = null;
+        OtpCodeExpiresAt = null;
+        OtpTryCount = 0;
         UpdatedAt = DateTime.UtcNow;
     }
 }

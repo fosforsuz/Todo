@@ -9,6 +9,9 @@ public interface IAuthService
 {
     Task<Result<TokenResponse>> LoginAsync(LoginCommand command, CancellationToken cancellationToken);
 
+    Task<Result<TokenResponse>> VerifyOtpAsync(VerifyOtpCommand command,
+        CancellationToken cancellationToken);
+
     Task<Result<CommandResponse>> SendVerifyMailAsync(SendVerifyMailCommand command,
         CancellationToken cancellationToken);
 
@@ -18,4 +21,6 @@ public interface IAuthService
     Task<Result<CommandResponse>> SendPasswordResetMailAsync(SendPasswordResetMailCommand command,
         CancellationToken cancellationToken);
 
+    Task<Result<CommandResponse>> PasswordResetAsync(PasswordResetCommand command,
+        CancellationToken cancellationToken);
 }

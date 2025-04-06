@@ -71,7 +71,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
         );
     }
 
-    public async Task<Domain.Entity.User?> GetUserByPasswordResetTokenAsync(string passwordResetToken, CancellationToken cancellationToken)
+    public async Task<Domain.Entity.User?> GetUserByPasswordResetTokenAsync(string passwordResetToken,
+        CancellationToken cancellationToken)
     {
         return await GetSingleAsync(
             predicate: user => user.PasswordResetToken == passwordResetToken && user.IsActive,
@@ -106,6 +107,30 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 HashedPassword = user.HashedPassword,
                 Is2FaEnabled = user.Is2FaEnabled,
                 IsEmailVerified = user.IsEmailVerified
+            },
+            cancellationToken: cancellationToken
+        );
+    }
+
+    public async Task<Domain.Entity.User?> GetUserForOtpLoginAsync(Guid userId,
+        CancellationToken cancellationToken)
+    {
+        return await GetSingleAsync(
+            predicate: user => user.Id == userId && user.IsActive,
+            selector: user => new Domain.Entity.User
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Username = user.Username,
+                UsernameLower = user.UsernameLower,
+                EmailLower = user.EmailLower,
+                HashedPassword = string.Empty,
+                Is2FaEnabled = user.Is2FaEnabled,
+                IsEmailVerified = user.IsEmailVerified,
+                OtpTryCount = user.OtpTryCount,
+                OtpCode = user.OtpCode,
+                OtpCodeExpiresAt = user.OtpCodeExpiresAt,
             },
             cancellationToken: cancellationToken
         );
