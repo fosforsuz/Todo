@@ -48,98 +48,49 @@ public class AuthService : BaseService<AuthService>, IAuthService
     {
         var user = await _userRepository.GetUserForLoginAsync(command.Email, cancellationToken);
         if (user is null)
-            return Result<TokenResponse>.Fail("Invalid email or password");
+            return Result<TokenResponse>.Fail(ErrorMessages.Invalid.EmailOrPassword, ErrorCodes.InvalidEmailOrPassword);
 
         var isLoginSuccessful = BCrypt.Net.BCrypt.Verify(command.Password, user.HashedPassword);
 
         if (isLoginSuccessful && user.Is2FaEnabled)
             return await SendOtpAsync(user, cancellationToken);
 
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-            await _loginHistoryService.AddLoginHistory(
-                user.Id,
-                command.IpAddress,
-                command.UserAgent,
-                isLoginSuccessful,
-                cancellationToken
-            );
-
-            if (!isLoginSuccessful)
-            {
-                await SaveAndCommitAsync(cancellationToken);
-                return Result<TokenResponse>.Fail("Invalid email or password");
-            }
-
-            var refreshToken = await _refreshTokenService.CreateRefreshToken(
-                user.Id,
-                command.IpAddress,
-                cancellationToken
-            );
-
-            await SaveAndCommitAsync(cancellationToken);
-
-            var tokenResponse = await _tokenService.GenerateTokenAsync(
-                user.Id,
-                username: user.Username,
-                role: user.Role.GetRoleName(),
-                refreshToken: refreshToken.Token,
-                email: user.Email,
-                refreshTokenExpires: refreshToken.ExpiresAt
-            );
-
-            await _logger.LogInformationAsync($"User who has Id: {user.Id} logged in successfully", cancellationToken);
-
-            return Result<TokenResponse>.Ok(tokenResponse);
-        }
-        catch (Exception ex)
-        {
-            await _unitOfWork.SafeRollbackAsync(cancellationToken);
-            await _logger.LogByExceptionSeverityAsync("Error occurred during login", ex, cancellationToken);
-            return Result<TokenResponse>.Fail("Unexpected error occurred during login.");
-        }
+        return await PerformLoginTransactionAsync(user: user, isLoginSuccessful: isLoginSuccessful,
+            ipAddress: command.IpAddress, userAgent: command.UserAgent, cancellationToken);
     }
 
-    private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
+    public async Task<Result<TokenResponse>> VerifyOtpAsync(VerifyOtpCommand command,
+        CancellationToken cancellationToken)
     {
+        var user = await _userRepository.GetUserForOtpLoginAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<TokenResponse>.Fail(ErrorMessages.Invalid.Otp, ErrorCodes.InvalidOtp);
 
-        try
+        if (!user.Is2FaEnabled)
+            return Result<TokenResponse>.Fail(ErrorMessages.NotEnabled.TwoFactorAuthentication,
+                ErrorCodes.TwoFactorAuthenticationNotEnabled);
+
+        if (user.OtpCodeExpiresAt < DateTime.UtcNow)
+            return Result<TokenResponse>.Fail(ErrorMessages.Expired.Otp, ErrorCodes.OtpExpired);
+
+        if (user.OtpTryCount >= 3)
+            return Result<TokenResponse>.Fail(ErrorMessages.Blocked.OtpTryExceeded, ErrorCodes.OtpTryExceeded);
+
+        var isOtpValid = !string.IsNullOrEmpty(user.OtpCode) && user.OtpCode == command.Otp;
+
+        if (!isOtpValid)
         {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-            user.GenerateOtpCode();
+            user.IncreaseOtpTryCount();
             await _userRepository.UpdateAsync(user, cancellationToken);
-
-            var email = await _emailFactory.CreateAsync(
-                type: EmailEventType.Otp,
-                to: user.Email,
-                metadata: new Dictionary<string, string?>
-                {
-                    { "name", user.Name },
-                    { "otpCode", user.OtpCode.ToString() },
-                    { "otpCodeExpiresAt", user.OtpCodeExpiresAt.ToString() }
-                }
-            );
-
-            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
-                cancellationToken);
-
-            await SaveAndCommitAsync(cancellationToken);
-
-            var tokenResponse = _tokenService.CreateTokenResponseFor2Fa(user.Id);
-
-            await _logger.LogInformationAsync($"OTP sent successfully for UserId: {user.Id}", cancellationToken);
-            return Result<TokenResponse>.Ok(tokenResponse);
         }
-        catch (Exception ex)
-        {
 
-            await _unitOfWork.SafeRollbackAsync(cancellationToken);
-            await _logger.LogByExceptionSeverityAsync("Error occurred during OTP generation", ex, cancellationToken);
-            return Result<TokenResponse>.Fail("Unexpected error occurred during OTP generation.");
-        }
+        return await PerformLoginTransactionAsync(
+            user: user,
+            isLoginSuccessful: isOtpValid,
+            ipAddress: command.IpAddress,
+            userAgent: command.UserAgent,
+            cancellationToken: cancellationToken
+        );
     }
 
     public async Task<Result<CommandResponse>> SendVerifyMailAsync(SendVerifyMailCommand command,
@@ -205,7 +156,7 @@ public class AuthService : BaseService<AuthService>, IAuthService
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
         if (user.IsEmailVerified)
-            return Result<CommandResponse>.Fail(ErrorMessages.Expired.EmailAlreadyVerified,
+            return Result<CommandResponse>.Fail(ErrorMessages.Verified.Email,
                 ErrorCodes.EmailAlreadyVerified);
 
         if (user.EmailVerificationTokenExpiresAt < DateTime.UtcNow)
@@ -244,7 +195,8 @@ public class AuthService : BaseService<AuthService>, IAuthService
         return result;
     }
 
-    public async Task<Result<CommandResponse>> PasswordResetAsync(PasswordResetCommand command, CancellationToken cancellationToken)
+    public async Task<Result<CommandResponse>> PasswordResetAsync(PasswordResetCommand command,
+        CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByPasswordResetTokenAsync(command.Token, cancellationToken);
         if (user is null)
@@ -341,4 +293,91 @@ public class AuthService : BaseService<AuthService>, IAuthService
         return result;
     }
 
+    private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            user.GenerateOtpCode();
+            await _userRepository.UpdateAsync(user, cancellationToken);
+
+            var email = await _emailFactory.CreateAsync(
+                type: EmailEventType.Otp,
+                to: user.Email,
+                metadata: new Dictionary<string, string?>
+                {
+                    { "name", user.Name },
+                    { "otpCode", user.OtpCode },
+                    { "otpCodeExpiresAt", user.OtpCodeExpiresAt.ToString() }
+                }
+            );
+
+            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
+                cancellationToken);
+
+            await SaveAndCommitAsync(cancellationToken);
+
+            var tokenResponse = _tokenService.CreateTokenResponseFor2Fa(user.Id);
+
+            await _logger.LogInformationAsync($"OTP sent successfully for UserId: {user.Id}", cancellationToken);
+            return Result<TokenResponse>.Ok(tokenResponse);
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.SafeRollbackAsync(cancellationToken);
+            await _logger.LogByExceptionSeverityAsync("Error occurred during OTP generation", ex, cancellationToken);
+            return Result<TokenResponse>.Fail("Unexpected error occurred during OTP generation.");
+        }
+    }
+
+    private async Task<Result<TokenResponse>> PerformLoginTransactionAsync(Domain.Entity.User user,
+        bool isLoginSuccessful, string? ipAddress, string? userAgent, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            await _loginHistoryService.AddLoginHistory(
+                user.Id,
+                ipAddress,
+                userAgent,
+                isLoginSuccessful,
+                cancellationToken
+            );
+
+            if (!isLoginSuccessful)
+            {
+                await SaveAndCommitAsync(cancellationToken);
+                return Result<TokenResponse>.Fail("Invalid email or password");
+            }
+
+            var refreshToken = await _refreshTokenService.CreateRefreshToken(
+                user.Id,
+                ipAddress,
+                cancellationToken
+            );
+
+            await SaveAndCommitAsync(cancellationToken);
+
+            var tokenResponse = await _tokenService.GenerateTokenAsync(
+                user.Id,
+                username: user.Username,
+                role: user.Role.GetRoleName(),
+                refreshToken: refreshToken.Token,
+                email: user.Email,
+                refreshTokenExpires: refreshToken.ExpiresAt
+            );
+
+            await _logger.LogInformationAsync($"User who has Id: {user.Id} logged in successfully", cancellationToken);
+
+            return Result<TokenResponse>.Ok(tokenResponse);
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.SafeRollbackAsync(cancellationToken);
+            await _logger.LogByExceptionSeverityAsync("Error occurred during login", ex, cancellationToken);
+            return Result<TokenResponse>.Fail("Unexpected error occurred during login.");
+        }
+    }
 }
