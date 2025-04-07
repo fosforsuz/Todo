@@ -385,6 +385,49 @@ public class AuthService : BaseService<AuthService>, IAuthService
         return result;
     }
 
+    public async Task<Result<CommandResponse>> LogoutAsync(LogoutCommand command, CancellationToken cancellationToken)
+    {
+        var refreshToken = await _refreshTokenService.GetRefreshTokenAsync(command.RefreshToken, cancellationToken);
+        if (refreshToken is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.RefreshToken, ErrorCodes.RefreshTokenNotFound);
+
+        if (refreshToken.IsRevoked)
+            return Result<CommandResponse>.Fail(ErrorMessages.Invalid.RefreshToken, ErrorCodes.InvalidRefreshToken);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
+
+                return Result<CommandResponse>.Ok(Success(refreshToken.UpdatedAt, correlationId: refreshToken.Id));
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(LogoutCommand)} executed successfully for UserId: {refreshToken.UserId}",
+                    cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command ({nameof(LogoutCommand)}) failed: {errorMessage}",
+                    cancellationToken);
+            },
+            onError: async (logoutCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error occurred during logout: {logoutCommand.RefreshToken}",
+                    exception,
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+
+        return result;
+    }
+
     private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
     {
         try

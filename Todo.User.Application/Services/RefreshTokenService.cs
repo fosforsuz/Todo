@@ -20,6 +20,7 @@ public class RefreshTokenService : IRefreshTokenService
                                   throw new ArgumentNullException(nameof(unitOfWork));
     }
 
+
     public async Task<RefreshToken?> GetRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(refreshToken))

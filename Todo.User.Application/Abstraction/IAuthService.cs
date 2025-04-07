@@ -29,4 +29,6 @@ public interface IAuthService
 
     Task<Result<CommandResponse>> Change2FaStatusAsync(Change2FaStatusCommand command,
         CancellationToken cancellationToken);
+
+    Task<Result<CommandResponse>> LogoutAsync(LogoutCommand command, CancellationToken cancellationToken);
 }
