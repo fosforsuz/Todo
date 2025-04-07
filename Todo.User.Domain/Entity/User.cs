@@ -258,4 +258,10 @@ public class User
         HashedPassword = HashPassword(password);
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void UpdateRole(Role role)
+    {
+        Role = role;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
