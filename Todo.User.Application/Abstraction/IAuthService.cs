@@ -23,4 +23,7 @@ public interface IAuthService
 
     Task<Result<CommandResponse>> PasswordResetAsync(PasswordResetCommand command,
         CancellationToken cancellationToken);
+
+    Task<Result<TokenResponse>> RefreshTokenAsync(RefreshTokenCommand command,
+        CancellationToken cancellationToken);
 }

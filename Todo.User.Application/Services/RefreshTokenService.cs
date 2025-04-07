@@ -20,6 +20,19 @@ public class RefreshTokenService : IRefreshTokenService
                                   throw new ArgumentNullException(nameof(unitOfWork));
     }
 
+    public async Task<RefreshToken?> GetRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(refreshToken))
+            throw new ArgumentNullException(nameof(refreshToken));
+
+        var refreshTokenEntity = await _refreshTokenRepository.GetSingleAsync(
+            predicate: token => token.Token == refreshToken && !token.IsRevoked && !token.IsUsed,
+            cancellationToken: cancellationToken
+        );
+
+        return refreshTokenEntity;
+    }
+
     public async Task<RefreshToken> CreateRefreshToken(Guid userId, string? ipAddress,
         CancellationToken cancellationToken)
     {
@@ -35,5 +48,17 @@ public class RefreshTokenService : IRefreshTokenService
         await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
 
         return refreshToken;
+    }
+
+    public async Task MarkRefreshTokenAsUsedAsync(RefreshToken refreshToken, CancellationToken cancellationToken)
+    {
+        refreshToken.MarkAsUsed();
+        await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
+    }
+
+    public async Task RevokeRefreshTokenAsync(RefreshToken refreshToken, CancellationToken cancellationToken)
+    {
+        refreshToken.MarkAsRevoked();
+        await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
     }
 }
