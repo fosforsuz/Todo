@@ -5,5 +5,5 @@ namespace Todo.User.Application.Command;
 
 public class LogoutCommand
 {
-    public required string RefreshToken { get; init; }
+    public string RefreshToken { get; init; } = string.Empty;
 }
