@@ -12,6 +12,7 @@ public static class ErrorMessages
     public static class NotFound
     {
         public const string User = "User not found";
+        public const string RefreshToken = "Refresh token not found";
     }
 
     public static class Expired
@@ -21,6 +22,7 @@ public static class ErrorMessages
         public const string PasswordResetToken = "Password reset token expired";
 
         public const string Otp = "OTP expired";
+        public const string RefreshToken = "Refresh token expired";
     }
 
     public static class Verified
@@ -43,6 +45,7 @@ public static class ErrorMessages
     public static class Invalid
     {
         public const string EmailOrPassword = "Invalid email or password";
+        public const string RefreshToken = "Invalid refresh token";
         public const string Otp = "Invalid OTP";
     }
 

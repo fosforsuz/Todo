@@ -293,6 +293,58 @@ public class AuthService : BaseService<AuthService>, IAuthService
         return result;
     }
 
+    public async Task<Result<TokenResponse>> RefreshTokenAsync(RefreshTokenCommand command,
+        CancellationToken cancellationToken)
+    {
+        var refreshToken = await _refreshTokenService.GetRefreshTokenAsync(command.Token, cancellationToken);
+        if (refreshToken is null)
+            return Result<TokenResponse>.Fail(ErrorMessages.NotFound.RefreshToken, ErrorCodes.RefreshTokenNotFound);
+
+        if (refreshToken.IsUsed || refreshToken.IsRevoked)
+            return Result<TokenResponse>.Fail(ErrorMessages.Invalid.RefreshToken, ErrorCodes.InvalidRefreshToken);
+
+        if (refreshToken.ExpiresAt < DateTime.UtcNow)
+            return Result<TokenResponse>.Fail(ErrorMessages.Expired.RefreshToken, ErrorCodes.RefreshTokenExpired);
+
+        var user = await _userRepository.GetUserByIdAsync(refreshToken.UserId, cancellationToken);
+        if (user is null)
+            return Result<TokenResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        try
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            var newRefreshToken = await _refreshTokenService.CreateRefreshToken(
+                userId: user.Id,
+                ipAddress: command.IpAddress,
+                cancellationToken: cancellationToken
+            );
+
+            await _refreshTokenService.MarkRefreshTokenAsUsedAsync(refreshToken, cancellationToken);
+
+            var tokenResponse = await _tokenService.GenerateTokenAsync(
+                userId: user.Id,
+                username: user.Username,
+                role: user.Role.GetRoleName(),
+                refreshToken: newRefreshToken.Token,
+                email: user.Email,
+                refreshTokenExpires: newRefreshToken.ExpiresAt
+            );
+
+            await _logger.LogInformationAsync($"Refresh token was regenerated for :{user.Id}", cancellationToken);
+            await SaveAndCommitAsync(cancellationToken);
+
+            return Result<TokenResponse>.Ok(tokenResponse);
+        }
+        catch (Exception e)
+        {
+            await _unitOfWork.SafeRollbackAsync(cancellationToken);
+            await _logger.LogByExceptionSeverityAsync("Error occurred during refresh token generation", e,
+                cancellationToken);
+            return Result<TokenResponse>.Fail("Unexpected error occurred during refresh token generation.");
+        }
+    }
+
     private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
     {
         try

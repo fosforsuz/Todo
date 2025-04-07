@@ -48,4 +48,16 @@ public class RefreshToken
             UpdatedAt = DateTime.UtcNow
         };
     }
+
+    public void MarkAsUsed()
+    {
+        IsUsed = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkAsRevoked()
+    {
+        IsRevoked = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
