@@ -26,4 +26,7 @@ public interface IAuthService
 
     Task<Result<TokenResponse>> RefreshTokenAsync(RefreshTokenCommand command,
         CancellationToken cancellationToken);
+
+    Task<Result<CommandResponse>> Change2FaStatusAsync(Change2FaStatusCommand command,
+        CancellationToken cancellationToken);
 }

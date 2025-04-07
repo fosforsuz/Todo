@@ -229,4 +229,13 @@ public class User
         OtpTryCount = 0;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void Change2FaStatus(bool status)
+    {
+        Is2FaEnabled = status;
+        OtpCode = null;
+        OtpCodeExpiresAt = null;
+        OtpTryCount = 0;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
