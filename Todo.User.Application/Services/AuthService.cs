@@ -272,7 +272,8 @@ public class AuthService : BaseService<AuthService>, IAuthService
             onFailure: async (_, res) =>
             {
                 var errorMessage = string.Join(", ", res.GetErrors());
-                await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
+                await _logger.LogWarningAsync(
+                    $"Command ({nameof(SendPasswordResetMailCommand)}) failed: {errorMessage}", cancellationToken);
             },
             onSuccess: async (_, _) =>
             {
@@ -343,6 +344,45 @@ public class AuthService : BaseService<AuthService>, IAuthService
                 cancellationToken);
             return Result<TokenResponse>.Fail("Unexpected error occurred during refresh token generation.");
         }
+    }
+
+    public async Task<Result<CommandResponse>> Change2FaStatusAsync(Change2FaStatusCommand command,
+        CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.Change2FaStatus(command.Is2FaEnabled);
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
+            },
+            onSuccess: async (statusCommand, _) =>
+            {
+                await _logger.LogInformationAsync(
+                    $"Command {nameof(Change2FaStatusCommand)} executed successfully for UserId: {statusCommand.UserId}",
+                    cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessage = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"Command ({nameof(RefreshTokenCommand)}) failed: {errorMessage}",
+                    cancellationToken);
+            },
+            onError: async (changeStatusCommand, exception) =>
+            {
+                await _logger.LogByExceptionSeverityAsync(
+                    $"Error accorded during 2FA status change: {changeStatusCommand.UserId}",
+                    exception, cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
     }
 
     private async Task<Result<TokenResponse>> SendOtpAsync(Domain.Entity.User user, CancellationToken cancellationToken)
