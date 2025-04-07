@@ -2,5 +2,5 @@ namespace Todo.User.Application.Command;
 
 public class VerifyMailCommand
 {
-    public required string VerifyToken { get; set; }
+    public string VerifyToken { get; set; } = string.Empty;
 }
