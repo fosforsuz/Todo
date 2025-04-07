@@ -27,7 +27,7 @@ public class RefreshTokenService : IRefreshTokenService
             throw new ArgumentNullException(nameof(refreshToken));
 
         var refreshTokenEntity = await _refreshTokenRepository.GetSingleAsync(
-            predicate: token => token.Token == refreshToken && !token.IsRevoked && !token.IsUsed,
+            token => token.Token == refreshToken && !token.IsRevoked && !token.IsUsed,
             cancellationToken: cancellationToken
         );
 

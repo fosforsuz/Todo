@@ -58,7 +58,7 @@ public class TokenService : ITokenService
 
     public TokenResponse CreateTokenResponseFor2Fa(Guid userId)
     {
-        return new TokenResponse()
+        return new TokenResponse
         {
             IsTwoFactorEnabled = true,
             UserId = userId.ToString(),

@@ -3,14 +3,13 @@ using Todo.SharedKernel.Extensions;
 using Todo.SharedKernel.Logger;
 using Todo.SharedKernel.Response;
 using Todo.SharedKernel.Results;
-using Todo.User.Application.Abstraction;
 
 namespace Todo.User.Application.Services;
 
 public abstract class BaseService<T> where T : class
 {
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILoggerService<T> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
     protected BaseService(IUnitOfWork unitOfWork, ILoggerService<T> logger)
     {
@@ -66,8 +65,10 @@ public abstract class BaseService<T> where T : class
     }
 
     protected static CommandResponse Success(DateTime processedDate, string? location = null,
-        Guid? correlationId = null) =>
-        new(processedDate, location, correlationId);
+        Guid? correlationId = null)
+    {
+        return new CommandResponse(processedDate, location, correlationId);
+    }
 
 
     protected async Task SaveAndCommitAsync(CancellationToken cancellationToken)

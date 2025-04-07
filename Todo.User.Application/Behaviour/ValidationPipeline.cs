@@ -39,9 +39,7 @@ public class ValidationPipeline<TRequest, TResponse> : IPipelineBehavior<TReques
 
         if (!typeof(TResponse).IsGenericType ||
             typeof(TResponse).GetGenericTypeDefinition() != typeof(Result<>))
-        {
             throw new InvalidOperationException("ValidationPipeline only works with Result<T> response types.");
-        }
 
         var resultType = typeof(TResponse).GetGenericArguments()[0];
 

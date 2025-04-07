@@ -6,5 +6,6 @@ public interface ITokenService
 {
     Task<TokenResponse> GenerateTokenAsync(Guid userId, string email, string username, string role,
         string? refreshToken = null, DateTime? refreshTokenExpires = null);
+
     TokenResponse CreateTokenResponseFor2Fa(Guid userId);
 }

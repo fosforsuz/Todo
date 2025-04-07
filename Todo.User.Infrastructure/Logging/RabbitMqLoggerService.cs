@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Net.Mail;
 using Todo.SharedKernel.Enums;
 using Todo.SharedKernel.Events;
-using Todo.SharedKernel.Extensions;
 using Todo.SharedKernel.Logger;
 using Todo.User.Infrastructure.Abstraction;
 
@@ -17,20 +16,30 @@ public class RabbitMqLoggerService<T> : ILoggerService<T> where T : class
         _publisher = publisher;
     }
 
-    public Task LogInformationAsync(string message, CancellationToken cancellationToken = default) =>
-        SendLogAsync(ErrorLevel.Information, message, null, cancellationToken);
+    public Task LogInformationAsync(string message, CancellationToken cancellationToken = default)
+    {
+        return SendLogAsync(ErrorLevel.Information, message, null, cancellationToken);
+    }
 
-    public Task LogWarningAsync(string message, CancellationToken cancellationToken = default) =>
-        SendLogAsync(ErrorLevel.Warning, message, null, cancellationToken);
+    public Task LogWarningAsync(string message, CancellationToken cancellationToken = default)
+    {
+        return SendLogAsync(ErrorLevel.Warning, message, null, cancellationToken);
+    }
 
-    public Task LogDebugAsync(string message, CancellationToken cancellationToken = default) =>
-        SendLogAsync(ErrorLevel.Debug, message, null, cancellationToken);
+    public Task LogDebugAsync(string message, CancellationToken cancellationToken = default)
+    {
+        return SendLogAsync(ErrorLevel.Debug, message, null, cancellationToken);
+    }
 
-    public Task LogErrorAsync(string message, Exception exception, CancellationToken cancellationToken = default) =>
-        SendLogAsync(ErrorLevel.Error, message, exception, cancellationToken);
+    public Task LogErrorAsync(string message, Exception exception, CancellationToken cancellationToken = default)
+    {
+        return SendLogAsync(ErrorLevel.Error, message, exception, cancellationToken);
+    }
 
-    public Task LogCriticalAsync(string message, Exception exception, CancellationToken cancellationToken = default) =>
-        SendLogAsync(ErrorLevel.Fatal, message, exception, cancellationToken);
+    public Task LogCriticalAsync(string message, Exception exception, CancellationToken cancellationToken = default)
+    {
+        return SendLogAsync(ErrorLevel.Fatal, message, exception, cancellationToken);
+    }
 
     public async Task LogByExceptionSeverityAsync(
         string contextMessage,
@@ -65,7 +74,7 @@ public class RabbitMqLoggerService<T> : ILoggerService<T> where T : class
             ExceptionType = exception?.GetType().FullName,
             StackTrace = exception?.StackTrace,
             Source = typeof(T).FullName ?? typeof(T).Name,
-            Metadata = RabbitMqLoggerService<T>.BuildDefaultMetadata(),
+            Metadata = BuildDefaultMetadata(),
             TraceId = GetTraceId(),
             SpanId = GetSpanId(),
             CorrelationId = GetCorrelationId()
@@ -84,9 +93,18 @@ public class RabbitMqLoggerService<T> : ILoggerService<T> where T : class
         };
     }
 
-    private static string? GetTraceId() => Activity.Current?.TraceId.ToString();
-    private static string? GetSpanId() => Activity.Current?.SpanId.ToString();
+    private static string? GetTraceId()
+    {
+        return Activity.Current?.TraceId.ToString();
+    }
 
-    private static string? GetCorrelationId() =>
-        Activity.Current?.Baggage.FirstOrDefault(kvp => kvp.Key == "CorrelationId").Value;
+    private static string? GetSpanId()
+    {
+        return Activity.Current?.SpanId.ToString();
+    }
+
+    private static string? GetCorrelationId()
+    {
+        return Activity.Current?.Baggage.FirstOrDefault(kvp => kvp.Key == "CorrelationId").Value;
+    }
 }

@@ -13,8 +13,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
     public async Task<Domain.Entity.User?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await GetSingleAsync(
-            predicate: user => user.Id == userId && user.IsActive,
-            selector: user => new Domain.Entity.User
+            user => user.Id == userId && user.IsActive,
+            user => new Domain.Entity.User
             {
                 Name = user.Name,
                 Username = user.Username,
@@ -25,7 +25,7 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 EmailVerificationToken = user.EmailVerificationToken,
                 EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt,
                 IsEmailVerified = user.IsEmailVerified,
-                Is2FaEnabled = user.Is2FaEnabled,
+                Is2FaEnabled = user.Is2FaEnabled
             },
             cancellationToken: cancellationToken
         );
@@ -35,8 +35,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
     {
         var normalizedEmail = email.ToLowerInvariant();
         return await GetSingleAsync(
-            predicate: user => user.EmailLower == normalizedEmail && user.IsActive,
-            selector: user => new Domain.Entity.User
+            user => user.EmailLower == normalizedEmail && user.IsActive,
+            user => new Domain.Entity.User
             {
                 Name = user.Name,
                 Username = user.Username,
@@ -45,7 +45,7 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 EmailLower = user.EmailLower,
                 HashedPassword = string.Empty,
                 EmailVerificationToken = user.EmailVerificationToken,
-                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt,
+                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt
             },
             cancellationToken: cancellationToken
         );
@@ -56,8 +56,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
         CancellationToken cancellationToken)
     {
         return await GetSingleAsync(
-            predicate: user => user.EmailVerificationToken == emailVerificationToken && user.IsActive,
-            selector: user => new Domain.Entity.User
+            user => user.EmailVerificationToken == emailVerificationToken && user.IsActive,
+            user => new Domain.Entity.User
             {
                 Name = user.Name,
                 Username = user.Username,
@@ -67,7 +67,7 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 HashedPassword = string.Empty,
                 IsEmailVerified = user.IsEmailVerified,
                 EmailVerificationToken = user.EmailVerificationToken,
-                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt,
+                EmailVerificationTokenExpiresAt = user.EmailVerificationTokenExpiresAt
             },
             cancellationToken: cancellationToken
         );
@@ -77,8 +77,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
         CancellationToken cancellationToken)
     {
         return await GetSingleAsync(
-            predicate: user => user.PasswordResetToken == passwordResetToken && user.IsActive,
-            selector: user => new Domain.Entity.User
+            user => user.PasswordResetToken == passwordResetToken && user.IsActive,
+            user => new Domain.Entity.User
             {
                 Name = user.Name,
                 Username = user.Username,
@@ -118,8 +118,8 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
         CancellationToken cancellationToken)
     {
         return await GetSingleAsync(
-            predicate: user => user.Id == userId && user.IsActive,
-            selector: user => new Domain.Entity.User
+            user => user.Id == userId && user.IsActive,
+            user => new Domain.Entity.User
             {
                 Id = user.Id,
                 Email = user.Email,
@@ -132,7 +132,7 @@ internal class UserRepository : Repository<Domain.Entity.User>, IUserRepository
                 IsEmailVerified = user.IsEmailVerified,
                 OtpTryCount = user.OtpTryCount,
                 OtpCode = user.OtpCode,
-                OtpCodeExpiresAt = user.OtpCodeExpiresAt,
+                OtpCodeExpiresAt = user.OtpCodeExpiresAt
             },
             cancellationToken: cancellationToken
         );

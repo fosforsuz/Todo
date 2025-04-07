@@ -16,14 +16,14 @@ namespace Todo.User.Application.Services;
 
 public class AuthService : BaseService<AuthService>, IAuthService
 {
-    private readonly ILoggerService<AuthService> _logger;
-    private readonly IUserRepository _userRepository;
-    private readonly ILoginHistoryService _loginHistoryService;
-    private readonly IRefreshTokenService _refreshTokenService;
     private readonly IEmailFactory _emailFactory;
+    private readonly ILoggerService<AuthService> _logger;
+    private readonly ILoginHistoryService _loginHistoryService;
     private readonly IRabbitMqEmailPublisher _rabbitMqEmailPublisher;
+    private readonly IRefreshTokenService _refreshTokenService;
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository;
 
     public AuthService(
         IUnitOfWork unitOfWork,
@@ -55,8 +55,8 @@ public class AuthService : BaseService<AuthService>, IAuthService
         if (isLoginSuccessful && user.Is2FaEnabled)
             return await SendOtpAsync(user, cancellationToken);
 
-        return await PerformLoginTransactionAsync(user: user, isLoginSuccessful: isLoginSuccessful,
-            ipAddress: command.IpAddress, userAgent: command.UserAgent, cancellationToken);
+        return await PerformLoginTransactionAsync(user, isLoginSuccessful,
+            command.IpAddress, command.UserAgent, cancellationToken);
     }
 
     public async Task<Result<TokenResponse>> VerifyOtpAsync(VerifyOtpCommand command,
@@ -85,11 +85,11 @@ public class AuthService : BaseService<AuthService>, IAuthService
         }
 
         return await PerformLoginTransactionAsync(
-            user: user,
-            isLoginSuccessful: isOtpValid,
-            ipAddress: command.IpAddress,
-            userAgent: command.UserAgent,
-            cancellationToken: cancellationToken
+            user,
+            isOtpValid,
+            command.IpAddress,
+            command.UserAgent,
+            cancellationToken
         );
     }
 
@@ -102,16 +102,16 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.CreateVerificationToken();
                 await _userRepository.UpdateAsync(user, cancellationToken);
 
                 var email = await _emailFactory.CreateAsync(
-                    type: EmailEventType.EmailConfirmation,
-                    to: user.Email,
-                    metadata: new Dictionary<string, string?>
+                    EmailEventType.EmailConfirmation,
+                    user.Email,
+                    new Dictionary<string, string?>
                     {
                         { "name", user.Name },
                         { "verificationToken", user.EmailVerificationToken },
@@ -124,25 +124,25 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
             },
-            onFailure: async (_, res) =>
+            async (_, res) =>
             {
                 var errorMessage = string.Join(", ", res.GetErrors());
                 await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
             },
-            onSuccess: async (_, _) =>
+            async (_, _) =>
             {
                 await _logger.LogInformationAsync(
                     $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
                     cancellationToken);
             },
-            onError: async (mailCommand, exception) =>
+            async (mailCommand, exception) =>
             {
                 await _logger.LogByExceptionSeverityAsync(
                     $"Error occurred during email verification: {mailCommand.UserId}",
                     exception,
                     cancellationToken);
             },
-            cancellationToken: cancellationToken
+            cancellationToken
         );
 
         return result;
@@ -165,31 +165,31 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
         var result = await ExecuteCommandAsync(
             command,
-            action: async () =>
+            async () =>
             {
                 user.VerifyEmail();
                 await _userRepository.UpdateAsync(user, cancellationToken);
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
             },
-            onFailure: async (_, res) =>
+            async (_, res) =>
             {
                 var errorMessage = string.Join(", ", res.GetErrors());
                 await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
             },
-            onSuccess: async (_, _) =>
+            async (_, _) =>
             {
                 await _logger.LogInformationAsync(
                     $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
                     cancellationToken);
             },
-            onError: async (mailCommand, exception) =>
+            async (mailCommand, exception) =>
             {
                 await _logger.LogByExceptionSeverityAsync(
                     $"Error occurred during email verification: {mailCommand.VerifyToken}",
                     exception,
                     cancellationToken);
             },
-            cancellationToken: cancellationToken
+            cancellationToken
         );
 
         return result;
@@ -207,33 +207,33 @@ public class AuthService : BaseService<AuthService>, IAuthService
                 ErrorCodes.PasswordResetTokenExpired);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.ResetPassword(command.NewPassword);
 
                 await _userRepository.UpdateAsync(user, cancellationToken);
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
             },
-            onFailure: async (_, res) =>
+            async (_, res) =>
             {
                 var errorMessage = string.Join(", ", res.GetErrors());
                 await _logger.LogWarningAsync($"Command failed: {errorMessage}", cancellationToken);
             },
-            onSuccess: async (_, _) =>
+            async (_, _) =>
             {
                 await _logger.LogInformationAsync(
                     $"Command {nameof(PasswordResetCommand)} executed successfully for UserId: {user.Id}",
                     cancellationToken);
             },
-            onError: async (mailCommand, exception) =>
+            async (mailCommand, exception) =>
             {
                 await _logger.LogByExceptionSeverityAsync(
                     $"Error occurred during email verification: {mailCommand.Token}",
                     exception,
                     cancellationToken);
             },
-            cancellationToken: cancellationToken
+            cancellationToken
         );
 
         return result;
@@ -247,16 +247,16 @@ public class AuthService : BaseService<AuthService>, IAuthService
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.CreatePasswordResetToken();
                 await _userRepository.UpdateAsync(user, cancellationToken);
 
                 var email = await _emailFactory.CreateAsync(
-                    type: EmailEventType.PasswordReset,
-                    to: user.Email,
-                    metadata: new Dictionary<string, string?>
+                    EmailEventType.PasswordReset,
+                    user.Email,
+                    new Dictionary<string, string?>
                     {
                         { "name", user.Name },
                         { "passwordResetToken", user.PasswordResetToken },
@@ -269,26 +269,26 @@ public class AuthService : BaseService<AuthService>, IAuthService
 
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
             },
-            onFailure: async (_, res) =>
+            async (_, res) =>
             {
                 var errorMessage = string.Join(", ", res.GetErrors());
                 await _logger.LogWarningAsync(
                     $"Command ({nameof(SendPasswordResetMailCommand)}) failed: {errorMessage}", cancellationToken);
             },
-            onSuccess: async (_, _) =>
+            async (_, _) =>
             {
                 await _logger.LogInformationAsync(
                     $"Command {nameof(SendPasswordResetMailCommand)} executed successfully for UserId: {user.Id}",
                     cancellationToken);
             },
-            onError: async (mailCommand, exception) =>
+            async (mailCommand, exception) =>
             {
                 await _logger.LogByExceptionSeverityAsync(
                     $"Error occurred during password reset email: {mailCommand.Email}",
                     exception,
                     cancellationToken);
             },
-            cancellationToken: cancellationToken
+            cancellationToken
         );
 
         return result;
@@ -316,15 +316,15 @@ public class AuthService : BaseService<AuthService>, IAuthService
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
             var newRefreshToken = await _refreshTokenService.CreateRefreshToken(
-                userId: user.Id,
-                ipAddress: command.IpAddress,
-                cancellationToken: cancellationToken
+                user.Id,
+                command.IpAddress,
+                cancellationToken
             );
 
             await _refreshTokenService.MarkRefreshTokenAsUsedAsync(refreshToken, cancellationToken);
 
             var tokenResponse = await _tokenService.GenerateTokenAsync(
-                userId: user.Id,
+                user.Id,
                 username: user.Username,
                 role: user.Role.GetRoleName(),
                 refreshToken: newRefreshToken.Token,
@@ -354,8 +354,8 @@ public class AuthService : BaseService<AuthService>, IAuthService
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.Change2FaStatus(command.Is2FaEnabled);
                 await _userRepository.UpdateAsync(user, cancellationToken);
@@ -395,8 +395,8 @@ public class AuthService : BaseService<AuthService>, IAuthService
             return Result<CommandResponse>.Fail(ErrorMessages.Invalid.RefreshToken, ErrorCodes.InvalidRefreshToken);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
 
@@ -438,9 +438,9 @@ public class AuthService : BaseService<AuthService>, IAuthService
             await _userRepository.UpdateAsync(user, cancellationToken);
 
             var email = await _emailFactory.CreateAsync(
-                type: EmailEventType.Otp,
-                to: user.Email,
-                metadata: new Dictionary<string, string?>
+                EmailEventType.Otp,
+                user.Email,
+                new Dictionary<string, string?>
                 {
                     { "name", user.Name },
                     { "otpCode", user.OtpCode },

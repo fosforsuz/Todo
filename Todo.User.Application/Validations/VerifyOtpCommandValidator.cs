@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using Todo.Shared.Contracts.Constant;
 using Todo.User.Application.Command;
@@ -12,7 +11,7 @@ public class VerifyOtpCommandValidator : AbstractValidator<VerifyOtpCommand>
         RuleFor(command => command.UserId)
             .NotEmpty()
             .WithMessage(ErrorMessages.NotEmpty.UserId);
-        
+
         RuleFor(command => command.Otp)
             .NotEmpty()
             .WithMessage(ErrorMessages.NotEmpty.Otp);

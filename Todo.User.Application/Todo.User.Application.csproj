@@ -7,19 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Query/" />
+        <Folder Include="Query/"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Todo.SharedKernel\Todo.SharedKernel.csproj" />
-        <ProjectReference Include="..\Todo.User.Infrastructure\Todo.User.Infrastructure.csproj" />
+        <ProjectReference Include="..\Todo.SharedKernel\Todo.SharedKernel.csproj"/>
+        <ProjectReference Include="..\Todo.User.Infrastructure\Todo.User.Infrastructure.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-        <PackageReference Include="FluentValidation" Version="11.11.0" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
-        <PackageReference Include="MediatR" Version="12.5.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
+        <PackageReference Include="FluentValidation" Version="11.11.0"/>
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0"/>
+        <PackageReference Include="MediatR" Version="12.5.0"/>
     </ItemGroup>
 
 </Project>

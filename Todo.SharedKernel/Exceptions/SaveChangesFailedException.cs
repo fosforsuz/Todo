@@ -1,5 +1,3 @@
-using System;
-
 namespace Todo.SharedKernel.Exceptions;
 
 public class SaveChangesFailedException : Exception
