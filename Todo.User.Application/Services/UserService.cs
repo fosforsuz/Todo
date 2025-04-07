@@ -124,6 +124,43 @@ public class UserService : BaseService<UserService>, IUserService
         return result;
     }
 
+    public async Task<Result<CommandResponse>> DeleteUserAsync(DeleteUserCommand command, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.Delete();
+
+                await _userRepository.UpdateAsync(user, cancellationToken);
+
+                await _logger.LogInformationAsync($"User deleted successfully {user.Id}", cancellationToken);
+
+                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync($"User deleted successfully {user.Id}", cancellationToken);
+            },
+            onError: async (_, ex) =>
+            {
+                await _logger.LogByExceptionSeverityAsync("An error occurred while deleting user", ex, cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessages = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"An error occurred while deleting user. {errorMessages}", cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
+    }
+
     private async Task<Result> ValidateUserUniquenessAsync(string email, string username, string? phone, Guid? userId,
         CancellationToken cancellationToken)
     {

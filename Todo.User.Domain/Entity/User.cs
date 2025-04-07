@@ -246,4 +246,10 @@ public class User
         NotificationEnabled = notificationEnabled;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void Delete()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
