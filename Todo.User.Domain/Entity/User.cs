@@ -252,4 +252,10 @@ public class User
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void UpdatePassword(string password)
+    {
+        HashedPassword = HashPassword(password);
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

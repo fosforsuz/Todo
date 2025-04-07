@@ -124,6 +124,50 @@ public class UserService : BaseService<UserService>, IUserService
         return result;
     }
 
+    public async Task<Result<CommandResponse>> UpdatePasswordAsync(UpdatePasswordCommand command,
+        CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        if (!user.VerifyPassword(command.OldPassword))
+            return Result<CommandResponse>.Fail(ErrorMessages.Invalid.Password, ErrorCodes.InvalidPassword);
+
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.UpdatePassword(command.NewPassword);
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await _logger.LogInformationAsync($"User password updated successfully {user.Id}", cancellationToken);
+
+                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync($"User password updated successfully {user.Id}", cancellationToken);
+            },
+            onError: async (_, ex) =>
+            {
+                await _logger.LogByExceptionSeverityAsync("An error occurred while updating user password", ex,
+                    cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessages = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"An error occurred while updating user password. {errorMessages}",
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
+    }
+
     public async Task<Result<CommandResponse>> DeleteUserAsync(DeleteUserCommand command, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);

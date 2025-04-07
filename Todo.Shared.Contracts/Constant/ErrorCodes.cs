@@ -16,10 +16,12 @@ public static class ErrorCodes
     public const string OtpExpired = "otp_expired";
     public const string RefreshTokenExpired = "refresh_token_expired";
 
+
     public const string TwoFactorAuthenticationNotEnabled = "two_factor_authentication_not_enabled";
     public const string InvalidEmailOrPassword = "invalid_email_or_password";
     public const string InvalidOtp = "invalid_otp";
     public const string InvalidRefreshToken = "invalid_refresh_token";
+    public const string InvalidPassword = "invalid_password";
 
     public const string EmailNotVerified = "email_not_verified";
     public const string EmailAlreadyVerified = "email_already_verified";

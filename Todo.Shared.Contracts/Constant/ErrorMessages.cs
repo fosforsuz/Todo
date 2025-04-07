@@ -46,6 +46,7 @@ public static class ErrorMessages
     {
         public const string EmailOrPassword = "Invalid email or password";
         public const string RefreshToken = "Invalid refresh token";
+        public const string Password = "Invalid password";
         public const string Otp = "Invalid OTP";
     }
 
