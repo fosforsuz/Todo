@@ -56,24 +56,24 @@ public class User
     [Column("hashed_password")]
     public required string HashedPassword { get; set; }
 
-    [Required] [Column("role")] public Role Role { get; set; } = Role.Standard;
+    [Required][Column("role")] public Role Role { get; set; } = Role.Standard;
 
-    [Required] [Column("utc_offset")] public int UtcOffset { get; set; }
+    [Required][Column("utc_offset")] public int UtcOffset { get; set; }
 
-    [Required] [Column("is_verified")] public bool IsEmailVerified { get; set; }
+    [Required][Column("is_verified")] public bool IsEmailVerified { get; set; }
 
     [Required]
     [Column("notification_enabled")]
     public bool NotificationEnabled { get; set; } = true;
 
-    [Required] [Column("is_active")] public bool IsActive { get; set; } = true;
+    [Required][Column("is_active")] public bool IsActive { get; set; } = true;
 
     #endregion
 
     #region Time Information
 
-    [Required] [Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [Required] [Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("created_at")] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Required][Column("updated_at")] public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     #endregion
 
@@ -236,6 +236,14 @@ public class User
         OtpCode = null;
         OtpCodeExpiresAt = null;
         OtpTryCount = 0;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Update(string name, string? phone, bool notificationEnabled)
+    {
+        Name = name;
+        Phone = phone;
+        NotificationEnabled = notificationEnabled;
         UpdatedAt = DateTime.UtcNow;
     }
 }

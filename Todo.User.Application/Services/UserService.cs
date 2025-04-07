@@ -10,13 +10,13 @@ using Todo.User.Infrastructure.Abstraction;
 
 namespace Todo.User.Application.Services;
 
-public class UserService : IUserService
+public class UserService : BaseService<UserService>, IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
     private readonly ILoggerService<UserService> _logger;
 
-    public UserService(IUnitOfWork unitOfWork, ILoggerService<UserService> logger)
+    public UserService(IUnitOfWork unitOfWork, ILoggerService<UserService> logger) : base(unitOfWork, logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -72,6 +72,58 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<Result<CommandResponse>> UpdateUserAsync(UpdateUserCommand command, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        if (!string.IsNullOrWhiteSpace(command.Phone))
+        {
+            var phoneValidationResult = await ValidatePhoneUniquenessAsync(command.Phone, user.Id,
+                cancellationToken);
+            if (phoneValidationResult.HasError)
+                return Result<CommandResponse>.Fail(
+                    ErrorMessages.Exist.PhoneAlreadyExists,
+                    ErrorCodes.PhoneAlreadyExists);
+        }
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.Update(
+                    command.Name,
+                    command.Phone,
+                    command.IsNotificationEnabled
+                );
+
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await _logger.LogInformationAsync($"User updated successfully {user.Id}", cancellationToken);
+
+                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync($"User updated successfully {user.Id}", cancellationToken);
+            },
+            onError: async (_, ex) =>
+            {
+                await _logger.LogByExceptionSeverityAsync("An error occurred while updating user", ex, cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessages = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"An error occurred while updating user. {errorMessages}", cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
+    }
+
     private async Task<Result> ValidateUserUniquenessAsync(string email, string username, string? phone, Guid? userId,
         CancellationToken cancellationToken)
     {
@@ -84,6 +136,20 @@ public class UserService : IUserService
         if (await _userRepository.AnyAsync(
                 x => x.UsernameLower == username && (!userId.HasValue || x.Id != userId.Value), cancellationToken))
             result.AddError(ErrorMessages.Exist.UsernameAlreadyExists, ErrorCodes.UsernameAlreadyExists);
+
+        if (string.IsNullOrEmpty(phone))
+            return result;
+
+        var phoneValidationResult = await ValidatePhoneUniquenessAsync(phone, userId, cancellationToken);
+        if (phoneValidationResult.HasError)
+            result.AddError(phoneValidationResult.GetErrorCodes()[0], phoneValidationResult.GetErrors()[0]);
+
+        return result;
+    }
+
+    private async Task<Result> ValidatePhoneUniquenessAsync(string phone, Guid? userId, CancellationToken cancellationToken)
+    {
+        var result = new Result();
 
         if (!string.IsNullOrWhiteSpace(phone) &&
             await _userRepository.AnyAsync(x => x.Phone == phone && (!userId.HasValue || x.Id != userId.Value),
