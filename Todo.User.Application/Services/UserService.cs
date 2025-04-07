@@ -58,7 +58,7 @@ public class UserService : BaseService<UserService>, IUserService
 
             await _logger.LogInformationAsync($"User registered successfully {user.Id}", cancellationToken);
 
-            var response = CreateSuccessResponse(user);
+            var response = Success(user.CreatedAt, null, user.Id);
             return Result<CommandResponse>.Ok(response);
         }
         catch (Exception ex)
@@ -103,7 +103,7 @@ public class UserService : BaseService<UserService>, IUserService
 
                 await _logger.LogInformationAsync($"User updated successfully {user.Id}", cancellationToken);
 
-                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, null, user.Id));
             },
             onSuccess: async (_, _) =>
             {
@@ -145,7 +145,7 @@ public class UserService : BaseService<UserService>, IUserService
 
                 await _logger.LogInformationAsync($"User password updated successfully {user.Id}", cancellationToken);
 
-                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+                return Result<CommandResponse>.Ok(Success(user.CreatedAt, null, user.Id));
             },
             onSuccess: async (_, _) =>
             {
@@ -160,6 +160,45 @@ public class UserService : BaseService<UserService>, IUserService
             {
                 var errorMessages = string.Join(", ", res.GetErrors());
                 await _logger.LogWarningAsync($"An error occurred while updating user password. {errorMessages}",
+                    cancellationToken);
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return result;
+    }
+
+    public async Task<Result<CommandResponse>> UpdateUserRoleAsync(UpdateUserRoleCommand command, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+            return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
+
+        var result = await ExecuteCommandAsync(
+            command: command,
+            action: async () =>
+            {
+                user.UpdateRole(command.Role);
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await _logger.LogInformationAsync($"User role updated successfully {user.Id}", cancellationToken);
+
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, null, user.Id));
+            },
+            onSuccess: async (_, _) =>
+            {
+                await _logger.LogInformationAsync($"User role updated successfully {user.Id}", cancellationToken);
+            },
+            onError: async (_, ex) =>
+            {
+                await _logger.LogByExceptionSeverityAsync("An error occurred while updating user role", ex,
+                    cancellationToken);
+            },
+            onFailure: async (_, res) =>
+            {
+                var errorMessages = string.Join(", ", res.GetErrors());
+                await _logger.LogWarningAsync($"An error occurred while updating user role. {errorMessages}",
                     cancellationToken);
             },
             cancellationToken: cancellationToken
@@ -184,7 +223,7 @@ public class UserService : BaseService<UserService>, IUserService
 
                 await _logger.LogInformationAsync($"User deleted successfully {user.Id}", cancellationToken);
 
-                return Result<CommandResponse>.Ok(CreateSuccessResponse(user));
+                return Result<CommandResponse>.Ok(Success(user.UpdatedAt, null, user.Id));
             },
             onSuccess: async (_, _) =>
             {
@@ -238,10 +277,5 @@ public class UserService : BaseService<UserService>, IUserService
             result.AddError(ErrorMessages.Exist.PhoneAlreadyExists, ErrorCodes.PhoneAlreadyExists);
 
         return result;
-    }
-
-    private static CommandResponse CreateSuccessResponse(Domain.Entity.User user)
-    {
-        return new CommandResponse(user.CreatedAt, string.Empty, user.Id);
     }
 }
