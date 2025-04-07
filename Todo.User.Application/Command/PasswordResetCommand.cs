@@ -4,7 +4,7 @@ namespace Todo.User.Application.Command;
 
 public class PasswordResetCommand
 {
-    public required string Token { get; init; }
-    public required string NewPassword { get; init; }
-    public required string ConfirmPassword { get; init; }
+    public string Token { get; init; } = string.Empty;
+    public string NewPassword { get; init; } = string.Empty;
+    public string ConfirmPassword { get; init; } = string.Empty;
 }
