@@ -1,24 +1,25 @@
 using System.Text;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
+using Todo.LogService.Service.Abstraction;
 using Todo.Shared.Contracts.Config;
 using Todo.Shared.Contracts.Constant;
 using Todo.SharedKernel.Events;
-using Todo.User.Infrastructure.Abstraction;
 
-namespace Todo.User.Infrastructure.Messaging;
+namespace Todo.LogService.Service;
 
-public class RabbitMqLogEventPublisher : ILogEventPublisher
+public class LogEventPublisher : ILogEventPublisher
 {
     private readonly RabbitMqConfig _config;
 
-    public RabbitMqLogEventPublisher(IOptions<RabbitMqConfig> config)
+    public LogEventPublisher(IConfiguration configuration)
     {
-        _config = config.Value ?? throw new ArgumentNullException(nameof(config));
+        var rabbitMqConfig = new RabbitMqConfig();
+        configuration.GetSection(nameof(RabbitMqConfig)).Bind(rabbitMqConfig);
+        _config = rabbitMqConfig;
     }
 
-    public async Task PublishAsync(LogEvent logEvent, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(LogEvent logEvent, string queue, CancellationToken cancellationToken = default)
     {
         var factory = new ConnectionFactory
         {
@@ -32,7 +33,7 @@ public class RabbitMqLogEventPublisher : ILogEventPublisher
         await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
-            RabbitMqQueues.LogEventQueue,
+            queue: queue,
             true,
             false,
             false,
@@ -50,7 +51,7 @@ public class RabbitMqLogEventPublisher : ILogEventPublisher
 
         await channel.BasicPublishAsync(
             string.Empty,
-            RabbitMqQueues.LogEventQueue,
+            queue,
             false,
             properties,
             body,
