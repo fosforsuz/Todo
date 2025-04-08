@@ -1,11 +1,15 @@
+using System.Linq.Expressions;
 using Todo.Shared.Contracts.Constant;
 using Todo.SharedKernel.Abstraction;
+using Todo.SharedKernel.Enums;
 using Todo.SharedKernel.Extensions;
 using Todo.SharedKernel.Logger;
 using Todo.SharedKernel.Response;
 using Todo.SharedKernel.Results;
 using Todo.User.Application.Abstraction;
 using Todo.User.Application.Command;
+using Todo.User.Application.Dto;
+using Todo.User.Application.Query;
 using Todo.User.Infrastructure.Abstraction;
 
 namespace Todo.User.Application.Services;
@@ -22,6 +26,113 @@ public class UserService : BaseService<UserService>, IUserService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _userRepository = _unitOfWork.GetCustomRepository<IUserRepository>() ??
                           throw new ArgumentNullException(nameof(unitOfWork));
+    }
+
+    public async Task<Result<UserDto>> GetUserById(GetUserByIdQuery query, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetSingleAsync(
+            predicate: user => user.Id == query.UserId && user.IsActive,
+            selector: user => new UserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Phone = user.Phone,
+                Role = user.Role.GetRoleName(),
+                Is2FaEnabled = user.Is2FaEnabled,
+                IsEmailVerified = user.IsEmailVerified,
+                IsNotificationEnabled = user.NotificationEnabled,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return user is null
+            ? Result<UserDto>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound)
+            : Result<UserDto>.Ok(user);
+    }
+
+    public async Task<Result<UserDto>> GetUserByUsername(GetUserByUsernameQuery query,
+        CancellationToken cancellationToken)
+    {
+        var username = query.Username.ToLower();
+        var user = await _userRepository.GetSingleAsync(
+            predicate: @user => @user.UsernameLower == username,
+            selector: @user => new UserDto
+            {
+                Id = @user.Id,
+                Username = @user.Username,
+                Name = @user.Name,
+                Email = @user.Email,
+                Phone = @user.Phone,
+                Role = @user.Role.GetRoleName(),
+                Is2FaEnabled = @user.Is2FaEnabled,
+                IsEmailVerified = @user.IsEmailVerified,
+                IsNotificationEnabled = @user.NotificationEnabled,
+                CreatedAt = @user.CreatedAt,
+                UpdatedAt = @user.UpdatedAt
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return user is null
+            ? Result<UserDto>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound)
+            : Result<UserDto>.Ok(user);
+    }
+
+    public async Task<Result<PaginatedList<UserDto>>> GetListUsersQuery(GetListUsersQuery query,
+        CancellationToken cancellationToken)
+    {
+        Expression<Func<Domain.Entity.User, bool>> predicate = user => user.IsActive;
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.ToLower();
+            predicate = predicate.AndAlso(user =>
+                user.UsernameLower.Contains(search) ||
+                user.Name.ToLower().Contains(search) ||
+                user.EmailLower.Contains(search) ||
+                (user.Phone != null && user.Phone.Contains(search)));
+        }
+
+        var skip = (query.Page - 1) * query.PageSize;
+
+        var users = await _userRepository.GetAsync(
+            predicate: predicate,
+            selector: user => new UserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Phone = user.Phone,
+                Role = user.Role.GetRoleName(),
+                Is2FaEnabled = user.Is2FaEnabled,
+                IsEmailVerified = user.IsEmailVerified,
+                IsNotificationEnabled = user.NotificationEnabled,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
+            },
+            skip: skip,
+            take: query.PageSize,
+            orderBy: query.SortBy,
+            descending: query.IsDescending,
+            cancellationToken: cancellationToken
+        );
+
+        var totalCount = await _userRepository.CountAsync(predicate, cancellationToken);
+
+        var paginated = new PaginatedList<UserDto>
+        {
+            Items = users,
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize
+        };
+
+        return Result<PaginatedList<UserDto>>.Ok(paginated);
     }
 
     public async Task<Result<CommandResponse>> RegisterUserAsync(RegisterCommand registerCommand,
