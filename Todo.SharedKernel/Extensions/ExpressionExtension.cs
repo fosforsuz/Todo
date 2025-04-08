@@ -2,8 +2,6 @@ using System.Linq.Expressions;
 
 namespace Todo.SharedKernel.Extensions;
 
-using System.Linq.Expressions;
-
 public static class ExpressionExtensions
 {
     public static Expression<Func<T, bool>> AndAlso<T>(
@@ -40,8 +38,8 @@ public static class ExpressionExtensions
 
     private sealed class ReplaceParameterVisitor : ExpressionVisitor
     {
-        private readonly ParameterExpression _oldParam;
         private readonly ParameterExpression _newParam;
+        private readonly ParameterExpression _oldParam;
 
         public ReplaceParameterVisitor(ParameterExpression oldParam, ParameterExpression newParam)
         {

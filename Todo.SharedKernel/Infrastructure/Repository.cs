@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Todo.SharedKernel.Abstraction;
 
@@ -49,7 +50,7 @@ public abstract class Repository<T> : IRepository<T> where T : class
         bool descending = false,
         CancellationToken cancellationToken = default)
     {
-        var query = GetQueryable(tracking: false).Where(predicate);
+        var query = GetQueryable(false).Where(predicate);
 
         if (string.IsNullOrWhiteSpace(orderBy))
             return await query
@@ -57,11 +58,11 @@ public abstract class Repository<T> : IRepository<T> where T : class
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync(cancellationToken);
-        
+
         var property = typeof(T).GetProperty(orderBy,
-            System.Reflection.BindingFlags.IgnoreCase |
-            System.Reflection.BindingFlags.Public |
-            System.Reflection.BindingFlags.Instance);
+            BindingFlags.IgnoreCase |
+            BindingFlags.Public |
+            BindingFlags.Instance);
 
         if (property == null)
             return await query
@@ -69,7 +70,7 @@ public abstract class Repository<T> : IRepository<T> where T : class
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync(cancellationToken);
-            
+
         var parameter = Expression.Parameter(typeof(T), "x");
         var propertyAccess = Expression.MakeMemberAccess(parameter, property);
         var orderByExpression = Expression.Lambda(propertyAccess, parameter);

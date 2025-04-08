@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using Todo.Shared.Contracts.Constant;
 using Todo.SharedKernel.Abstraction;
-using Todo.SharedKernel.Enums;
 using Todo.SharedKernel.Extensions;
 using Todo.SharedKernel.Logger;
 using Todo.SharedKernel.Response;
@@ -31,8 +30,8 @@ public class UserService : BaseService<UserService>, IUserService
     public async Task<Result<UserDto>> GetUserById(GetUserByIdQuery query, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetSingleAsync(
-            predicate: user => user.Id == query.UserId && user.IsActive,
-            selector: user => new UserDto
+            user => user.Id == query.UserId && user.IsActive,
+            user => new UserDto
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -59,20 +58,20 @@ public class UserService : BaseService<UserService>, IUserService
     {
         var username = query.Username.ToLower();
         var user = await _userRepository.GetSingleAsync(
-            predicate: @user => @user.UsernameLower == username,
-            selector: @user => new UserDto
+            user => user.UsernameLower == username,
+            user => new UserDto
             {
-                Id = @user.Id,
-                Username = @user.Username,
-                Name = @user.Name,
-                Email = @user.Email,
-                Phone = @user.Phone,
-                Role = @user.Role.GetRoleName(),
-                Is2FaEnabled = @user.Is2FaEnabled,
-                IsEmailVerified = @user.IsEmailVerified,
-                IsNotificationEnabled = @user.NotificationEnabled,
-                CreatedAt = @user.CreatedAt,
-                UpdatedAt = @user.UpdatedAt
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Phone = user.Phone,
+                Role = user.Role.GetRoleName(),
+                Is2FaEnabled = user.Is2FaEnabled,
+                IsEmailVerified = user.IsEmailVerified,
+                IsNotificationEnabled = user.NotificationEnabled,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
             },
             cancellationToken: cancellationToken
         );
@@ -100,8 +99,8 @@ public class UserService : BaseService<UserService>, IUserService
         var skip = (query.Page - 1) * query.PageSize;
 
         var users = await _userRepository.GetAsync(
-            predicate: predicate,
-            selector: user => new UserDto
+            predicate,
+            user => new UserDto
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -115,11 +114,11 @@ public class UserService : BaseService<UserService>, IUserService
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             },
-            skip: skip,
-            take: query.PageSize,
-            orderBy: query.SortBy,
-            descending: query.IsDescending,
-            cancellationToken: cancellationToken
+            skip,
+            query.PageSize,
+            query.SortBy,
+            query.IsDescending,
+            cancellationToken
         );
 
         var totalCount = await _userRepository.CountAsync(predicate, cancellationToken);
