@@ -8,4 +8,5 @@ public class RabbitMqConfig
     public string Password { get; set; } = "guest";
     public bool AutomaticRecoveryEnabled { get; set; } = true;
     public string ConnectionName { get; set; } = "TodoService";
+    public int RetryCount { get; set; } = 5;
 }

@@ -77,9 +77,16 @@ public class LogEventConsumer : BackgroundService
             var message = Encoding.UTF8.GetString(body);
             var logEvent = JsonSerializer.Deserialize<LogEvent>(message);
 
+
             if (logEvent == null)
             {
                 _logger.LogError("Failed to deserialize log event");
+                return;
+            }
+
+            if (logEvent.RetryCount > _rabbitMqConfig.RetryCount)
+            {
+                _logger.LogWarning("Log event retry count exceeded: {Parameter}", logEvent.ToJson());
                 return;
             }
 
