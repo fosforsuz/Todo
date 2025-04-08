@@ -4,5 +4,5 @@ namespace Todo.LogService.Service.Abstraction;
 
 public interface ILogEventPublisher
 {
-    Task PublishAsync(LogEvent logEvent, CancellationToken cancellationToken = default);
+    Task PublishAsync(LogEvent logEvent, string queue, CancellationToken cancellationToken = default);
 }

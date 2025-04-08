@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Serilog;
 using Todo.LogService.Service.Abstraction;
 using Todo.Shared.Contracts.Config;
 using Todo.Shared.Contracts.Constant;
@@ -10,21 +9,18 @@ using Todo.SharedKernel.Events;
 
 namespace Todo.LogService.Messaging;
 
-public class LogEventConsumer : BackgroundService
+public class LogEventDlqConsumer : BackgroundService
 {
     private readonly RabbitMqConfig _rabbitMqConfig;
-    private readonly ILogEventHandler _logEventHandler;
-    private readonly ILogger<LogEventConsumer> _logger;
     private readonly ILogEventPublisher _publisher;
-    private readonly IFallbackLogWriter _fallbackLogWriter;
+    private readonly ILogger<LogEventDlqConsumer> _logger;
 
-    public LogEventConsumer(IConfiguration configuration, ILogger<LogEventConsumer> logger,
-        ILogEventHandler logEventHandler, ILogEventPublisher publisher, IFallbackLogWriter fallbackLogWriter)
+
+    public LogEventDlqConsumer(IConfiguration configuration, ILogger<LogEventDlqConsumer> logger,
+        ILogEventPublisher publisher)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logEventHandler = logEventHandler ?? throw new ArgumentNullException(nameof(logEventHandler));
-        _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
-        _fallbackLogWriter = fallbackLogWriter ?? throw new ArgumentNullException(nameof(fallbackLogWriter));
+        _publisher = publisher;
         var rabbitMqConfig = new RabbitMqConfig();
         configuration.GetSection(nameof(RabbitMqConfig)).Bind(rabbitMqConfig);
         _rabbitMqConfig = rabbitMqConfig;
@@ -32,7 +28,7 @@ public class LogEventConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var factory = new ConnectionFactory()
+        var factory = new ConnectionFactory
         {
             HostName = _rabbitMqConfig.HostName,
             Port = _rabbitMqConfig.Port,
@@ -48,7 +44,7 @@ public class LogEventConsumer : BackgroundService
         await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         await channel.QueueDeclareAsync(
-            queue: RabbitMqQueues.LogEventQueue,
+            queue: RabbitMqQueues.LogEventDlqQueue,
             durable: true,
             exclusive: false,
             autoDelete: false,
@@ -61,7 +57,7 @@ public class LogEventConsumer : BackgroundService
         consumer.ReceivedAsync += ProcessLoggingConsumerOnReceivedAsync(stoppingToken);
 
         await channel.BasicConsumeAsync(
-            queue: RabbitMqQueues.LogEventQueue,
+            queue: RabbitMqQueues.LogEventDlqQueue,
             autoAck: true, // For logging, we can set this to true because not critical information
             consumer: consumer,
             cancellationToken: stoppingToken
@@ -89,28 +85,13 @@ public class LogEventConsumer : BackgroundService
                 return;
             }
 
-            if (logEvent.RetryCount > _rabbitMqConfig.RetryCount)
-            {
-                _logger.LogWarning("Log event retry count exceeded: {Parameter}", logEvent.ToJson());
+            logEvent.ResetRetryCount();
+            logEvent.AddMetaData("FromDlq", "true");
 
-                if (logEvent.DoesMetaDataMatchKeyValue("FromDlq", "true"))
-                {
-                    _fallbackLogWriter.Write(logEvent: logEvent, message: "Log event retry count exceeded");
-                    return;
-                }
-
-                if (!logEvent.Level.Equals("Error", StringComparison.OrdinalIgnoreCase) &&
-                    !logEvent.Level.Equals("Critical", StringComparison.OrdinalIgnoreCase) &&
-                    !logEvent.Level.Equals("Fatal", StringComparison.OrdinalIgnoreCase))
-                    return;
-
-                await _publisher.PublishAsync(logEvent, RabbitMqQueues.LogEventDlqQueue, stoppingToken);
-                return;
-            }
 
             try
             {
-                await _logEventHandler.HandleAsync(logEvent, stoppingToken);
+                await _publisher.PublishAsync(logEvent, RabbitMqQueues.LogEventQueue, stoppingToken);
                 _logger.LogInformation("Log event: {Parameter}", logEvent.ToJson());
             }
             catch (Exception ex)

@@ -1,5 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 using Todo.LogService.Service.Abstraction;
+using Todo.Shared.Contracts.Constant;
 using Todo.SharedKernel.Events;
 
 namespace Todo.LogService.Service;
@@ -26,7 +27,7 @@ public class LogEventHandler : ILogEventHandler
         {
             _logger.LogError("Failed to index log event: {Reason}", response.DebugInformation);
             logEvent.IncrementRetryCount();
-            await _publisher.PublishAsync(logEvent, cancellationToken);
+            await _publisher.PublishAsync(logEvent, RabbitMqQueues.LogEventQueue, cancellationToken);
         }
         else
         {

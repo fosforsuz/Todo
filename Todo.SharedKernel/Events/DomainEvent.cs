@@ -45,7 +45,7 @@ public abstract class DomainEvent
 
     public string? GetMetaData(string key)
     {
-        return MetaData.TryGetValue(key, out var value) ? value : null;
+        return MetaData.GetValueOrDefault(key);
     }
 
     public string ToJson(bool indented = false)
@@ -57,5 +57,14 @@ public abstract class DomainEvent
         };
 
         return JsonSerializer.Serialize(this, GetType(), options);
+    }
+
+    public bool DoesMetaDataMatchKeyValue(string key, string value)
+    {
+        var metaDataValue = GetMetaData(key);
+        if (metaDataValue == null)
+            return false;
+
+        return metaDataValue.Equals(value, StringComparison.OrdinalIgnoreCase);
     }
 }

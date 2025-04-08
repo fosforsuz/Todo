@@ -19,7 +19,7 @@ public class LogEventPublisher : ILogEventPublisher
         _config = rabbitMqConfig;
     }
 
-    public async Task PublishAsync(LogEvent logEvent, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(LogEvent logEvent, string queue, CancellationToken cancellationToken = default)
     {
         var factory = new ConnectionFactory
         {
@@ -33,7 +33,7 @@ public class LogEventPublisher : ILogEventPublisher
         await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
-            RabbitMqQueues.LogEventQueue,
+            queue: queue,
             true,
             false,
             false,
@@ -51,7 +51,7 @@ public class LogEventPublisher : ILogEventPublisher
 
         await channel.BasicPublishAsync(
             string.Empty,
-            RabbitMqQueues.LogEventQueue,
+            queue,
             false,
             properties,
             body,
