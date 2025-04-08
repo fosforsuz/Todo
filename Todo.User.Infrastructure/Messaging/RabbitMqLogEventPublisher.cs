@@ -11,9 +11,9 @@ namespace Todo.User.Infrastructure.Messaging;
 
 public class RabbitMqLogEventPublisher : ILogEventPublisher
 {
-    private readonly LogRabbitMqConfig _config;
+    private readonly RabbitMqConfig _config;
 
-    public RabbitMqLogEventPublisher(IOptions<LogRabbitMqConfig> config)
+    public RabbitMqLogEventPublisher(IOptions<RabbitMqConfig> config)
     {
         _config = config.Value ?? throw new ArgumentNullException(nameof(config));
     }
