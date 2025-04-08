@@ -5,4 +5,4 @@ using Todo.User.Application.Dto;
 
 namespace Todo.User.Application.Query;
 
-public class GetUserByIdQuery : IdentifiableCommand, IRequest<Result<List<UserDto>>>;
+public class GetUserByIdQuery : IdentifiableCommand, IRequest<Result<UserDto>>;

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Todo.SharedKernel.Abstraction;
 
@@ -38,6 +39,59 @@ public abstract class Repository<T> : IRepository<T> where T : class
     {
         return await GetQueryable(tracking).Where(predicate).Select(selector)
             .Skip(skip).Take(take).ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<TResult>> GetAsync<TResult>(
+        Expression<Func<T, bool>> predicate,
+        Expression<Func<T, TResult>> selector,
+        int skip,
+        int take,
+        string? orderBy = null,
+        bool descending = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = GetQueryable(false).Where(predicate);
+
+        if (string.IsNullOrWhiteSpace(orderBy))
+            return await query
+                .Select(selector)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+        var property = typeof(T).GetProperty(orderBy,
+            BindingFlags.IgnoreCase |
+            BindingFlags.Public |
+            BindingFlags.Instance);
+
+        if (property == null)
+            return await query
+                .Select(selector)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+        var orderByExpression = Expression.Lambda(propertyAccess, parameter);
+
+        var methodName = descending ? "OrderByDescending" : "OrderBy";
+
+        var resultExpression = Expression.Call(
+            typeof(Queryable),
+            methodName,
+            [typeof(T), property.PropertyType],
+            query.Expression,
+            Expression.Quote(orderByExpression)
+        );
+
+        query = query.Provider.CreateQuery<T>(resultExpression);
+
+        return await query
+            .Select(selector)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<T?> GetSingleAsync(Expression<Func<T, bool>> predicate, bool tracking = false,

@@ -54,6 +54,27 @@ public interface IRepository<T> where T : class
         Expression<Func<T, TResult>> selector, bool tracking = false, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Retrieves a projected list of entities matching the specified predicate, with support for paging and ordering.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the projected result.</typeparam>
+    /// <param name="predicate">The condition to filter the entities.</param>
+    /// <param name="selector">The selector function to project the entities to a new form.</param>
+    /// <param name="skip">The number of entities to skip (for pagination).</param>
+    /// <param name="take">The maximum number of entities to take (for pagination).</param>
+    /// <param name="orderBy">The property name to order the results by. Case-insensitive. If null, no ordering is applied.</param>
+    /// <param name="descending">Specifies whether the ordering should be descending.</param>
+    /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+    /// <returns>A task representing the asynchronous operation, with a list of projected entities as the result.</returns>
+    Task<List<TResult>> GetAsync<TResult>(
+        Expression<Func<T, bool>> predicate,
+        Expression<Func<T, TResult>> selector,
+        int skip,
+        int take,
+        string? orderBy = null,
+        bool descending = false,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Retrieves a single entity matching the specified predicate.
     /// </summary>
     /// <param name="predicate">The condition to filter the entity.</param>
