@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using Todo.Shared.Contracts.Constant;
 using Todo.User.Application.Command;

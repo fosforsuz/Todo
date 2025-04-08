@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using Todo.Shared.Contracts.Constant;
 using Todo.User.Application.Command;
@@ -9,7 +8,6 @@ public class UpdateUserRoleCommandValidator : AbstractValidator<UpdateUserRoleCo
 {
     public UpdateUserRoleCommandValidator()
     {
-
         RuleFor(command => command.UserId)
             .NotEmpty()
             .WithMessage(ErrorMessages.NotEmpty.UserId);

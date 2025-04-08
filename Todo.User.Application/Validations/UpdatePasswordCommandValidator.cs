@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using Todo.Shared.Contracts.Constant;
 using Todo.User.Application.Command;
@@ -7,7 +6,6 @@ namespace Todo.User.Application.Validations;
 
 public class UpdatePasswordCommandValidator : AbstractValidator<UpdatePasswordCommand>
 {
-
     public UpdatePasswordCommandValidator()
     {
         RuleFor(command => command.OldPassword)
@@ -29,6 +27,5 @@ public class UpdatePasswordCommandValidator : AbstractValidator<UpdatePasswordCo
         RuleFor(command => command.ConfirmPassword)
             .Equal(command => command.NewPassword)
             .WithMessage(ErrorMessages.Match.Password);
-
     }
 }

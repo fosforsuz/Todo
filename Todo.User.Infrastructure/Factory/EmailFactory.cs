@@ -24,10 +24,7 @@ public class EmailFactory : IEmailFactory
 
         var html = await File.ReadAllTextAsync(templatePath);
 
-        foreach (var kvp in metadata)
-        {
-            html = html.Replace($"{{{{{kvp.Key}}}}}", kvp.Value);
-        }
+        foreach (var kvp in metadata) html = html.Replace($"{{{{{kvp.Key}}}}}", kvp.Value);
 
         return new EmailEvent
         {

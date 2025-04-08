@@ -12,9 +12,9 @@ namespace Todo.User.Application.Services;
 
 public class UserService : BaseService<UserService>, IUserService
 {
+    private readonly ILoggerService<UserService> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
-    private readonly ILoggerService<UserService> _logger;
 
     public UserService(IUnitOfWork unitOfWork, ILoggerService<UserService> logger) : base(unitOfWork, logger)
     {
@@ -72,7 +72,8 @@ public class UserService : BaseService<UserService>, IUserService
         }
     }
 
-    public async Task<Result<CommandResponse>> UpdateUserAsync(UpdateUserCommand command, CancellationToken cancellationToken)
+    public async Task<Result<CommandResponse>> UpdateUserAsync(UpdateUserCommand command,
+        CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
         if (user is null)
@@ -89,8 +90,8 @@ public class UserService : BaseService<UserService>, IUserService
         }
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.Update(
                     command.Name,
@@ -111,12 +112,14 @@ public class UserService : BaseService<UserService>, IUserService
             },
             onError: async (_, ex) =>
             {
-                await _logger.LogByExceptionSeverityAsync("An error occurred while updating user", ex, cancellationToken);
+                await _logger.LogByExceptionSeverityAsync("An error occurred while updating user", ex,
+                    cancellationToken);
             },
             onFailure: async (_, res) =>
             {
                 var errorMessages = string.Join(", ", res.GetErrors());
-                await _logger.LogWarningAsync($"An error occurred while updating user. {errorMessages}", cancellationToken);
+                await _logger.LogWarningAsync($"An error occurred while updating user. {errorMessages}",
+                    cancellationToken);
             },
             cancellationToken: cancellationToken
         );
@@ -136,8 +139,8 @@ public class UserService : BaseService<UserService>, IUserService
 
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.UpdatePassword(command.NewPassword);
                 await _userRepository.UpdateAsync(user, cancellationToken);
@@ -168,15 +171,16 @@ public class UserService : BaseService<UserService>, IUserService
         return result;
     }
 
-    public async Task<Result<CommandResponse>> UpdateUserRoleAsync(UpdateUserRoleCommand command, CancellationToken cancellationToken)
+    public async Task<Result<CommandResponse>> UpdateUserRoleAsync(UpdateUserRoleCommand command,
+        CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
         if (user is null)
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.UpdateRole(command.Role);
                 await _userRepository.UpdateAsync(user, cancellationToken);
@@ -207,15 +211,16 @@ public class UserService : BaseService<UserService>, IUserService
         return result;
     }
 
-    public async Task<Result<CommandResponse>> DeleteUserAsync(DeleteUserCommand command, CancellationToken cancellationToken)
+    public async Task<Result<CommandResponse>> DeleteUserAsync(DeleteUserCommand command,
+        CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByIdAsync(command.UserId, cancellationToken);
         if (user is null)
             return Result<CommandResponse>.Fail(ErrorMessages.NotFound.User, ErrorCodes.UserNotFound);
 
         var result = await ExecuteCommandAsync(
-            command: command,
-            action: async () =>
+            command,
+            async () =>
             {
                 user.Delete();
 
@@ -231,12 +236,14 @@ public class UserService : BaseService<UserService>, IUserService
             },
             onError: async (_, ex) =>
             {
-                await _logger.LogByExceptionSeverityAsync("An error occurred while deleting user", ex, cancellationToken);
+                await _logger.LogByExceptionSeverityAsync("An error occurred while deleting user", ex,
+                    cancellationToken);
             },
             onFailure: async (_, res) =>
             {
                 var errorMessages = string.Join(", ", res.GetErrors());
-                await _logger.LogWarningAsync($"An error occurred while deleting user. {errorMessages}", cancellationToken);
+                await _logger.LogWarningAsync($"An error occurred while deleting user. {errorMessages}",
+                    cancellationToken);
             },
             cancellationToken: cancellationToken
         );
@@ -267,7 +274,8 @@ public class UserService : BaseService<UserService>, IUserService
         return result;
     }
 
-    private async Task<Result> ValidatePhoneUniquenessAsync(string phone, Guid? userId, CancellationToken cancellationToken)
+    private async Task<Result> ValidatePhoneUniquenessAsync(string phone, Guid? userId,
+        CancellationToken cancellationToken)
     {
         var result = new Result();
 

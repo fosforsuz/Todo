@@ -14,13 +14,14 @@ public class UnitOfWork : IUnitOfWork
     private readonly IServiceProvider _serviceProvider;
     private bool _disposed;
     private IDbContextTransaction? _transaction;
-    public bool IsTransactionStarted => _transaction is not null;
 
     public UnitOfWork(UserDbContext userDbContext, IServiceProvider serviceProvider)
     {
         _context = userDbContext ?? throw new ArgumentNullException(nameof(userDbContext));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
+
+    public bool IsTransactionStarted => _transaction is not null;
 
 
     public IRepository<T> GetRepository<T>() where T : class
