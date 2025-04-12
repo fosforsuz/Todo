@@ -56,5 +56,9 @@ public class RabbitMqLogEventPublisher : ILogEventPublisher
             body,
             cancellationToken
         );
+
+        await channel.CloseAsync(cancellationToken);
+        await connection.CloseAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 }

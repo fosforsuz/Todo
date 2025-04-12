@@ -115,6 +115,13 @@ public class LogEventConsumer : BackgroundService
             }
             catch (Exception ex)
             {
+                if (logEvent.Level.Equals("Error", StringComparison.OrdinalIgnoreCase) ||
+                    logEvent.Level.Equals("Critical", StringComparison.OrdinalIgnoreCase) ||
+                    logEvent.Level.Equals("Fatal", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _publisher.PublishAsync(logEvent, RabbitMqQueues.LogEventDlqQueue, stoppingToken);
+                }
+
                 _logger.LogError(ex, "Error processing log event");
             }
         };

@@ -119,7 +119,7 @@ public class AuthService : BaseService<AuthService>, IAuthService
                     }
                 );
 
-                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
+                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email,
                     cancellationToken);
 
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
@@ -264,8 +264,7 @@ public class AuthService : BaseService<AuthService>, IAuthService
                     }
                 );
 
-                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
-                    cancellationToken);
+                await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, cancellationToken);
 
                 return Result<CommandResponse>.Ok(Success(user.UpdatedAt, correlationId: user.Id));
             },
@@ -448,8 +447,7 @@ public class AuthService : BaseService<AuthService>, IAuthService
                 }
             );
 
-            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, RabbitMqQueues.EmailQueue,
-                cancellationToken);
+            await _rabbitMqEmailPublisher.PublishEmailEventAsync(email, cancellationToken);
 
             await SaveAndCommitAsync(cancellationToken);
 
